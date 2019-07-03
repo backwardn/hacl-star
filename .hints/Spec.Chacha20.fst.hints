@@ -18,7 +18,7 @@
         "typing_Lib.IntTypes.bits", "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "86578d9836d3b4e87da420eafa6d893f"
+      "35247fd65d443963fcd830a4dd697072"
     ],
     [
       "Spec.Chacha20.block",
@@ -37,7 +37,7 @@
         "typing_Lib.IntTypes.bits", "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "a3c55cec3afd84b9d08242a48becc988"
+      "146aa79ffb0356ea94a0e26486091c1c"
     ],
     [
       "Spec.Chacha20.nonce",
@@ -56,7 +56,7 @@
         "typing_Lib.IntTypes.bits", "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "f7b9ee9d75281750c1ba3cee0f12ddb9"
+      "e101dfa3f1ab4947584c1a2c1019a8ae"
     ],
     [
       "Spec.Chacha20.state",
@@ -74,7 +74,7 @@
         "typing_Lib.IntTypes.bits", "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "b2355162a07b841e52ddffc29f8e0e00"
+      "a11e149e80d7c9da4e5df5522d795319"
     ],
     [
       "Spec.Chacha20.line",
@@ -104,7 +104,7 @@
         "typing_Lib.IntTypes.bits", "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "6847c7775feb4ad2ec5dffa5ccd3b3c3"
+      "dd80e70a8d00fb86a7faea8c4dc91d84"
     ],
     [
       "Spec.Chacha20.quarter_round",
@@ -129,7 +129,7 @@
         "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "4f6e905b482068f2c6f2fcb53ab82417"
+      "2d77ddc4187f4e51b13c28ac971f1110"
     ],
     [
       "Spec.Chacha20.column_round",
@@ -149,7 +149,7 @@
         "typing_Prims.pow2", "typing_Spec.Chacha20.size_key"
       ],
       0,
-      "ff9ff9974a5377bbbe683bc3a88c06b2"
+      "34bbb4626d9d5fbd18b81f4b48c73df2"
     ],
     [
       "Spec.Chacha20.diagonal_round",
@@ -187,7 +187,7 @@
         "typing_Lib.IntTypes.bits", "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "9e299733af160cc89ef205e2d8f2cfe3"
+      "175852bc2ba3b34aeb3bf10a15ce1fc7"
     ],
     [
       "Spec.Chacha20.chacha20_add_counter",
@@ -205,7 +205,7 @@
         "typing_Lib.IntTypes.bits", "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "d3a6b054c8a8e1a08bd0a3979c97e5b6"
+      "ff83042cde5c7f1ce554cb6fb85b0e60"
     ],
     [
       "Spec.Chacha20.chacha20_constants",
@@ -260,7 +260,7 @@
         "typing_FStar.Seq.Base.length"
       ],
       0,
-      "c88c136b38919cb715fb3b5615eec16d"
+      "f3ae4163b0c2fb453639fb0e046d8f0e"
     ],
     [
       "Spec.Chacha20.chacha20_init",
@@ -282,7 +282,7 @@
         "typing_FStar.Seq.Base.length"
       ],
       0,
-      "f6f6642fb6f491d93668b2bc695e8aec"
+      "c8ec45bbf478ae0dffeaec366039e6de"
     ],
     [
       "Spec.Chacha20.chacha20_key_block0",
@@ -306,7 +306,7 @@
         "typing_FStar.Seq.Base.length", "typing_Prims.pow2"
       ],
       0,
-      "4f93de1f018ea62ad019a2214dfb6364"
+      "06e9b87a45a033fb130fc048e0514a8c"
     ],
     [
       "Spec.Chacha20.chacha20_key_block",
@@ -376,7 +376,7 @@
         "typing_Lib.IntTypes.bits", "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "5c4853e5879cf958c5167349a7dd9caf"
+      "adac43dbb4527dcfb02af699108e5977"
     ],
     [
       "Spec.Chacha20.chacha20_update",
@@ -397,7 +397,7 @@
         "typing_Lib.IntTypes.bits", "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "9f47b01a461b7d50ae850af3ec25c76d"
+      "77508abb876598068b44d7f2995cd8a1"
     ],
     [
       "Spec.Chacha20.chacha20_decrypt_bytes",
@@ -406,7 +406,7 @@
       1,
       [ "@query" ],
       0,
-      "7ea8d1d47d63b12c737a5821691f7894"
+      "f9cbc9a2ce1bdd608a9b9536d9a37ab5"
     ]
   ]
 ]

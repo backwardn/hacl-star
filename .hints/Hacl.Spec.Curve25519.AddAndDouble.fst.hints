@@ -16,7 +16,7 @@
         "refinement_interpretation_Tm_refine_542f9d4f129664613f2483a6c88bc7c2"
       ],
       0,
-      "e98d92874c09acd7ecc952ffff753f69"
+      "61911c4dc0e992bd78fd1ced50597828"
     ],
     [
       "Hacl.Spec.Curve25519.AddAndDouble.lemma_add_and_double",
@@ -38,7 +38,7 @@
         "projection_inverse_FStar.Pervasives.Native.Mktuple2__2"
       ],
       0,
-      "b0a2f364bded5caeab2839092ce59984"
+      "3ad467136492bb00abba10c54aca5593"
     ],
     [
       "Hacl.Spec.Curve25519.AddAndDouble.montgomery_ladder1_0",
@@ -56,7 +56,7 @@
         "refinement_interpretation_Tm_refine_542f9d4f129664613f2483a6c88bc7c2"
       ],
       0,
-      "c5a57c171633d8b1e61ba82374ca925d"
+      "f2fe486662bea18de322a36a7a941bca"
     ],
     [
       "Hacl.Spec.Curve25519.AddAndDouble.lemma_montgomery_ladder",
@@ -75,7 +75,7 @@
         "projection_inverse_FStar.Pervasives.Native.Mktuple3__3"
       ],
       0,
-      "b42d72f2e41383a39ea32cb624194090"
+      "24aad727dff591688222fc09c94c4288"
     ]
   ]
 ]

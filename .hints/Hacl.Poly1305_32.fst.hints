@@ -14,7 +14,7 @@
         "typing_Spec.Poly1305.size_block"
       ],
       0,
-      "ff66bbc93d59c9ca471c7bf2a75afe39"
+      "3ccf515cd416b7d8c0e9eeae1275a066"
     ],
     [
       "Hacl.Poly1305_32.poly1305_update_blocks",
@@ -78,7 +78,7 @@
         "typing_tok_Lib.IntTypes.U64@tok"
       ],
       0,
-      "50f7782ae272c9bab0f7223dfbf2e2a8"
+      "43f5101d2b2a841d5677d75fcc4b8e54"
     ],
     [
       "Hacl.Poly1305_32.poly1305_update_blocks",
@@ -109,7 +109,7 @@
         "typing_Spec.Poly1305.size_key"
       ],
       0,
-      "f2b0f1bbeb2c2fe79c16e238d35c427e"
+      "cf6cb567fec1169369c49a7f6e6b2a75"
     ],
     [
       "Hacl.Poly1305_32.poly1305_update_blocks",
@@ -168,7 +168,7 @@
         "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "424b1b33daaeec7885eb4412b913a605"
+      "4f3e4e0082d4fcdb240795ef459047d6"
     ],
     [
       "Hacl.Poly1305_32.poly1305_update_last",
@@ -229,7 +229,7 @@
         "typing_tok_Lib.IntTypes.U32@tok", "typing_tok_Lib.IntTypes.U64@tok"
       ],
       0,
-      "4422445a40c44196bdb00740cebc3b89"
+      "27a9904aba179b70fd360986d785538f"
     ],
     [
       "Hacl.Poly1305_32.poly1305_update_last",
@@ -288,7 +288,7 @@
         "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "55467e4c1ef557bbf354686e20fffa24"
+      "de85078299aa50b303dce8b03cdceef0"
     ]
   ]
 ]

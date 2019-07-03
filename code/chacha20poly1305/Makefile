@@ -34,7 +34,7 @@ FSTAR_INCLUDE_DIRS = \
   $(HACL_HOME)/code/chacha20
 
 FSTAR_FLAGS = $(OTHERFLAGS) --cmi \
-  --cache_checked_modules --odir $(OUTPUT_DIR) \
+  --cache_checked_modules --cache_dir $(CACHE_DIR) --odir $(OUTPUT_DIR) \
   --already_cached "'Prims+FStar+LowStar+C+Spec.Loops+TestLib+Lib+Hacl.Impl.Poly1305'" \
   $(addprefix --include ,$(FSTAR_INCLUDE_DIRS))
 

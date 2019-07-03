@@ -33,7 +33,7 @@
         "typing_tok_Lib.IntTypes.PUB@tok", "typing_tok_Lib.IntTypes.U32@tok"
       ],
       0,
-      "5061e8d3c5a3ab2246bbab9d8393b71a"
+      "2a8eac7f92ebc7103b539d694327b9f3"
     ],
     [
       "Hacl.Impl.Chacha20Poly1305.aead_decrypt_st",
