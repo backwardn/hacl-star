@@ -10,15 +10,6 @@ open FStar.Mul
 
 open Hacl.Spec.P256.Definitions
 
-val p256_prime_value: n : nat ->  Lemma
-	(requires (n = 256))
-	(ensures (pow2 n - pow2 224 + pow2 192 + pow2 96 -1 = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff))
-	[SMTPat (pow2 n - pow2 224 + pow2 192 + pow2 96 - 1)]
-
-let p256_prime_value n = 
-	assert_norm(pow2 256 - pow2 224 + pow2 192 + pow2 96 - 1 = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff)
-
-
 assume val log_and: a: uint64 -> b: uint64{uint_v b == 0 \/ uint_v b == pow2 64 - 1} -> 
 Lemma (if uint_v b = 0 then uint_v (logand a b) == 0 else uint_v (logand a b) == uint_v a)
 
@@ -49,24 +40,25 @@ let prime_lemma a =
   modulo_lemma (a - prime) prime;
   lemma_mod_plus (a - prime) 1 prime
 
-(*val lemma_for_multiplication_1: 
+
+val lemma_for_multiplication_1: 
   a: felem4 {as_nat4 a < prime} -> 
   b: felem4 {as_nat4 b < prime} -> 
   Lemma (ensures (
-let p256 = (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) in 
-let (x8, c) = add4 a b in 
-let (x16, r) = sub4 c p256 in 
-uint_v x8 == 1 ==> uint_v x16 == 1))
+    let p256 = (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) in 
+    let (x8, c) = add4 a b in 
+    let (x16, r0, r1, r2, r3) = sub4 c p256 in 
+    uint_v x8 == 1 ==> uint_v x16 == 1))
 
 let lemma_for_multiplication_1 a b = 
   let p256 = (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) in 
   assert_norm(prime < pow2 256);
   assert_norm(as_nat4 p256 == prime);
   let (x8, c) = add4 a b in 
-  let (x16, r) = sub4 c p256 in   
+  let (x16, r0, r1, r2, r3) = sub4 c p256 in   
   admit();
   lemma_nat_4 c
-*)
+
 
 
 val small_modulo_lemma_extended: a: nat -> b: pos -> Lemma (if a < b then a % b = a else True)

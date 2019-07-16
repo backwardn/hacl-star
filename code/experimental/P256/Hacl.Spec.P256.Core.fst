@@ -36,56 +36,69 @@ let eq_0_u64 a =
   let b = u64 0 in 
   eq_u64 a b
 
+
 inline_for_extraction noextract
-val cmovznz: mask : uint64 ->  x: uint64 -> y: uint64 -> 
+val cmovznz: cin : uint64 ->  x: uint64 -> y: uint64 -> 
   Pure uint64
   (requires True)
-  (ensures fun r ->(* if uint_v cin = 0 then uint_v r == uint_v x else uint_v r == uint_v y) *) True)
+  (ensures fun r -> if uint_v cin = 0 then uint_v r == uint_v x else uint_v r == uint_v y)
 
-#reset-options "--z3refresh --z3rlimit 100"
-
-(* reprove!  *)
 let cmovznz cin x y  = 
     let x2 = neq_mask cin (u64 0) in 
     let x3 = logor (logand y x2) (logand x (lognot x2)) in
     let ln = lognot (neq_mask cin (u64 0)) in 
-    log_and y x2; 
-    log_not_lemma x2;
-    log_and x ln;
-    log_or (logand y x2) (logand x (lognot (x2)));
-    admit();
+    cmovznz4_lemma cin x y;
     x3
 
-
 inline_for_extraction noextract
-val cmovznz4: cin: uint64{uint_v cin <=1} -> x: felem4 -> y: felem4 -> Pure (r: felem4)
+val cmovznz4: cin: uint64 -> x: felem4 -> y: felem4 -> Pure (r: felem4)
 (requires True)
 (ensures fun r -> if uint_v cin = 0 then as_nat4 r == as_nat4 x else as_nat4 r == as_nat4 y)
 
 let cmovznz4 cin (x0, x1, x2, x3) (y0, y1, y2, y3) = 
   let mask = neq_mask cin (u64 0) in 
   let r0 = logor (logand y0 mask) (logand x0 (lognot mask)) in 
+        cmovznz4_lemma cin x0 y0;
   let r1 = logor (logand y1 mask) (logand x1 (lognot mask)) in 
+        cmovznz4_lemma cin x1 y1;
   let r2 = logor (logand y2 mask) (logand x2 (lognot mask))  in 
+        cmovznz4_lemma cin x2 y2;
   let r3 = logor (logand y3 mask) (logand x3 (lognot mask))  in 
+        cmovznz4_lemma cin x3 y3;
   (r0, r1, r2, r3)
 
 
-#set-options "--z3rlimit 100"
-let felem_add (a0, a1, a2, a3) (b0, b1, b2, b3) = 
-  let (x8, (x1, x3, x5, x7)) = add4 (a0, a1, a2, a3) (b0, b1, b2, b3)  in 
-   lemma_nat_4 (x1, x3, x5, x7);
-  assert_norm (as_nat4  (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) == prime);
-  let (x16, x9, x11, x13, x15) = sub4 (x1, x3, x5, x7) (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001)  in 
-  (* lemma_for_multiplication_1 (a0, a1, a2, a3) (b0, b1, b2, b3); *)
-    lemma_nat_4 (x9, x11, x13, x15); 
-  let (x17, x18) = subborrow x8 (u64 0) x16  in 
-    prime_lemma (as_nat4 (a0, a1, a2, a3)  + as_nat4 (b0, b1, b2, b3));
-    small_modulo_lemma_extended (as_nat4 (x1, x3, x5, x7)) prime; 
-  let (r0, r1, r2, r3) = cmovznz4 x18 (x9, x11, x13, x15) (x1, x3, x5, x7) in 
-  assert(as_nat4 (r0, r1, r2, r3) = (as_nat4 (a0, a1, a2, a3)  + as_nat4 (b0, b1, b2, b3)) % prime);
-  (r0, r1, r2, r3)
+val reduction_prime_2prime_with_carry: carry: uint64{uint_v carry <= 1} -> 
+  a: felem4{as_nat4 a + uint_v carry * pow2 256 < 2 * prime} -> 
+  Tot (r: felem4 {as_nat4 r == (as_nat4 a + uint_v carry * pow2 256) % prime})
 
+
+#set-options "--z3rlimit 300 --z3refresh"
+
+let reduction_prime_2prime_with_carry carry a = 
+  lemma_nat_4 a;
+    assert_norm (as_nat4  (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) == prime);
+  let (cin, r0, r1, r2, r3) = sub4 a  (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) in 
+    assert(as_nat4 (r0, r1, r2, r3) - uint_v cin * pow2 256 = as_nat4 a - prime);
+  let (r, c) = subborrow carry (u64 0) cin  in  
+  let result = cmovznz4 c (r0, r1, r2, r3) a in
+    assert(if uint_v carry > 0 then uint_v c == 0 else if  uint_v carry = 0 && uint_v cin = 0 then uint_v c = 0 else uint_v c = 1);
+
+    assert(if (uint_v carry * pow2 256 + as_nat4 a) >= prime then
+      begin
+	if uint_v cin = 0 then 
+	  as_nat4 result == (as_nat4 a + uint_v carry * pow2 256) % prime
+	else 
+	  as_nat4 result == (as_nat4 a + uint_v carry * pow2 256) % prime
+      end
+      else as_nat4 result == (as_nat4 a + uint_v carry * pow2 256) % prime);
+  result
+
+
+let felem_add arg1 arg2 = 
+  let (x8, c) = add4 arg1 arg2 in 
+  let result = reduction_prime_2prime_with_carry x8 c in 
+  result
 
 
 
@@ -118,31 +131,6 @@ let reduction_prime_2prime (a0, a1, a2, a3) =
   assert_norm (as_nat4 (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) == prime);
   let (x16, r0, r1, r2, r3) = sub4 (a0, a1, a2, a3) (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) in 
   cmovznz4 x16 (r0, r1, r2, r3) (a0, a1, a2, a3)
-
-val reduction_prime_2prime_with_carry: carry: uint64{uint_v carry <= 1} -> a0: uint64 -> a1: uint64 -> a2: uint64 -> a3: uint64 -> Tot (r: felem4) (*{as_nat4 r == (as_nat4 a + uint_v carry * pow2 256) % prime} *)
-
-
-let reduction_prime_2prime_with_carry carry a0 a1 a2 a3 = 
-  (* lemma_nat_4 a; *)
-    assert_norm (as_nat4 (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) == prime);
-  let (x16, r0, r1, r2, r3) = sub4 (a0, a1, a2, a3) (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) in 
-  let (result, c) = subborrow carry (u64 0) x16  in  
-    (* assert(if as_nat4 a < prime then uint_v x16 = 1 else uint_v x16 = 0); *)
-    (* lemma_nat_4 (a0, a1, a2, a3); *)
-
-   (*  assert(if uint_v x16 = 0 then as_nat4 a - prime = as_nat4 r else True);
-    assert(as_nat4 (a0, a1, a2, a3) < pow2 256);
-    assert_norm (prime < pow2 256);
-    assert(as_nat4 a + pow2 256 > prime);
-    assert(if uint_v c = 0 then uint_v carry = uint_v x16 else uint_v carry < uint_v x16);
-    *) 
-    (* assert(if uint_v c = 0 then uint_v carry = 0 && uint_v x16 = 0 \/ uint_v carry = 1 && uint_v x16 = 1 else uint_v carry = 0 && uint_v x16 = 1); *)
-
-  let (r_0, r_1, r_2, r_3) = cmovznz4 c (r0, r1, r2, r3) (a0, a1, a2, a3)  in 
-    (* assert(if uint_v carry = 1 && uint_v x16 = 1 then as_nat4  (r0, r1, r2, r3) = (as_nat4 a + uint_v carry * pow2 256) % prime else True); *)
-    (* assert(if uint_v carry = 1 && uint_v x16 = 0 then as_nat4  (r0, r1, r2, r3) = (as_nat4 a + uint_v carry * pow2 256) % prime else True); *)
-    (* assert(if uint_v carry = 0 && uint_v x16 = 1 then as_nat4  (r0, r1, r2, r3) = (as_nat4 a + uint_v carry * pow2 256) % prime else True); *)
-   (r_0, r_1, r_2, r_3) 
 
 inline_for_extraction noextract
 val shift_carry: x: uint64 -> cin: uint64{uint_v cin <=1} -> Tot (r: uint64 {uint_v r = (uint_v x * 2) % pow2 64 + uint_v cin})
@@ -221,7 +209,7 @@ let shift_left_felem (a0, a1, a2, a3) =
   assert(as_nat4 (a0, a1, a2, a3) * 2 = uint_v a0_updated + uint_v a1_updated * pow2 64 + uint_v a2_updated * pow2 128 + uint_v  a3_updated * pow2 192 + uint_v carry3 * pow2 256);
   assert_norm(uint_v a2_updated * pow2 64 * pow2 64 == uint_v a2_updated * pow2 128);
   assert_norm(uint_v a3_updated * pow2 64 * pow2 64 * pow2 64 == uint_v a3_updated * pow2 192);
-  reduction_prime_2prime_with_carry carry3 a0_updated  a1_updated  a2_updated a3_updated
+  reduction_prime_2prime_with_carry carry3 (a0_updated,  a1_updated,  a2_updated, a3_updated)
 
 
 let upload_prime () = 
@@ -458,7 +446,7 @@ let montgomery_multiplication (a0, a1, a2, a3) (b0, b1, b2, b3) =
     lemma_less_than_primes (as_nat4  (a0, a1, a2, a3)) (as_nat4 (b0, b1, b2, b3));
     assert(wide_as_nat4  (st30, st31, st32, st33, st34, st35, st36, st37) < 2 * prime);
     lemma_prime_as_wild_nat  (st30, st31, st32, st33, st34, st35, st36, st37);
-  reduction_prime_2prime_with_carry st34 st30 st31 st32 st33
+  reduction_prime_2prime_with_carry st34 (st30, st31, st32, st33)
 
 
 let cube_tuple (a0, a1, a2, a3) = 
