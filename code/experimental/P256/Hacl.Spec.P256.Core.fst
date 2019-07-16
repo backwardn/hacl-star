@@ -11,25 +11,6 @@ open Hacl.Spec.P256.Lemmas
 
 open FStar.Mul
 
-(*
-inline_for_extraction noextract
-val sub4_prime:
-    f1:felem4
-  -> Pure (uint64 & felem4)
-    (requires True)
-    (ensures fun (c, r) -> True)
-
-
-let sub4_prime (f10, f11, f12, f13)  =
-  let o0, c0 = subborrow f10 (u64 0xffffffffffffffff) (u64 0) in
-  let o1, c1 = subborrow f11 (u64 0xffffffff) c0 in
-  let o2, c2 = subborrow f12 (u64 0) c1 in
-  let o3, c3 = subborrow f13 (u64 0xffffffff00000001) c2 in
-  (*!!!!*)
-  (*lemma_mul_assos_5 (v c3) (pow2 64) (pow2 64) (pow2 64) (pow2 64); *)
-  assert_norm (pow2 64 * pow2 64 * pow2 64 * pow2 64 = pow2 256);
-  c3, (o0, o1, o2, o3)
-*) 
 
 inline_for_extraction noextract
 val lt_u64:a:uint64 -> b:uint64 -> Tot bool
@@ -90,7 +71,6 @@ let cmovznz4 cin (x0, x1, x2, x3) (y0, y1, y2, y3) =
   (r0, r1, r2, r3)
 
 
-inline_for_extraction noextract
 #set-options "--z3rlimit 100"
 let felem_add (a0, a1, a2, a3) (b0, b1, b2, b3) = 
   let (x8, (x1, x3, x5, x7)) = add4 (a0, a1, a2, a3) (b0, b1, b2, b3)  in 
@@ -133,30 +113,6 @@ let felem_sub (a0, a1, a2, a3) (b0, b1, b2, b3) =
     (* lemma_add4_zero prime_temp r; *)
     (* lemma_sub_add arg1 arg2 prime_temp r; *)
  (r0, r1, r2, r3)
-
-
-let get_high_part a = 
-  to_u32(shift_right a (size 32))
-
-
-let get_low_part a = to_u32 a
-
-
-val lemma_xor_zero: low: uint64{uint_v (get_high_part low) ==  0} -> high: uint64{uint_v (get_low_part high) == 0} ->  Lemma (uint_v (logxor low high) = uint_v high * pow2 32 + uint_v low)
-
-let lemma_xor_zero low high = 
-  assert(uint_v low = uint_v (get_low_part low));
-  assert(uint_v high = uint_v (get_high_part high) * pow2 32);
-  admit()
-
-
-let store_high_low_u high low = 
-  let as_uint64_high = to_u64 high in 
-  let as_uint64_high = Lib.IntTypes.shift_left as_uint64_high (size 32) in 
-  let as_uint64_low = to_u64 low in
-  lemma_xor_zero as_uint64_low as_uint64_high;
-  logxor as_uint64_low as_uint64_high
-
 
 let reduction_prime_2prime (a0, a1, a2, a3) = 
   assert_norm (as_nat4 (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) == prime);

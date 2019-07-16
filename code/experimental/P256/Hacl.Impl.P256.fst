@@ -11,11 +11,12 @@ open Hacl.Impl.Curve25519.Field64.Core
 open Hacl.Spec.P256.Core
 open Hacl.Spec.P256.Lemmas
 open Hacl.Spec.P256.Definitions
-open Hacl.Spec.P256.SolinasReduction
+open Hacl.Impl.SolinasReduction
 open Hacl.Spec.P256.MontgomeryMultiplication
 open Hacl.Spec.P256.MontgomeryMultiplication.PointDouble
 open Hacl.Spec.P256.MontgomeryMultiplication.PointAdd
 open Hacl.Spec.P256.Normalisation 
+open Hacl.Impl.LowLevel
  
 open FStar.Math.Lemmas
 
@@ -33,102 +34,18 @@ let basepoint_list : x:list uint64 =
   l
 
 
-
-#set-options "--z3rlimit 500" 
-val p256_add: arg1: felem -> arg2: felem ->  out: felem -> Stack unit 
-  (requires (fun h0 ->  
-    (let arg1_as_seq = as_seq h0 arg1 in let arg2_as_seq = as_seq h0 arg2 in 
-    felem_seq_as_nat arg1_as_seq < prime /\ felem_seq_as_nat arg2_as_seq < prime /\
-    live h0 out /\ live h0 arg1 /\ live h0 arg2))
-  )
-  (ensures (fun h0 _ h1 -> modifies1 out h0 h1 /\ 
-    (let arg1_as_seq = as_seq h0 arg1 in let arg2_as_seq = as_seq h0 arg2 in 
-    as_nat h1 out < prime /\ as_seq h1 out == felem_add_seq arg1_as_seq arg2_as_seq))
-  )
-
-let p256_add arg1 arg2 out = 
-  let h0 = ST.get() in 
-
-  let arg1_0 = index arg1 (size 0) in 
-  let arg1_1 = index arg1 (size 1) in 
-  let arg1_2 = index arg1 (size 2) in 
-  let arg1_3 = index arg1 (size 3) in 
-
-  let arg2_0 = index arg2 (size 0) in 
-  let arg2_1 = index arg2 (size 1) in 
-  let arg2_2 = index arg2 (size 2) in 
-  let arg2_3 = index arg2 (size 3) in 
-
-  let (r0, r1, r2, r3) = felem_add (arg1_0, arg1_1, arg1_2, arg1_3) (arg2_0, arg2_1, arg2_2, arg2_3) in   
-  
-  upd out (size 0) r0;
-  upd out (size 1) r1;
-  upd out (size 2) r2;
-  upd out (size 3) r3;
-
-  let h1 = ST.get() in 
-  assert(Lib.Sequence.equal (as_seq h1 out) (felem_add_seq (as_seq h0 arg1) (as_seq h0 arg2)));
-  ()
-
-
-val p256_sub: arg1: felem -> arg2: felem -> out: felem -> Stack unit 
-  (requires 
-    (fun h0 -> live h0 out /\ live h0 arg1 /\ live h0 arg2 /\ as_nat h0 arg1 < prime /\ as_nat h0 arg2 < prime))
-  (ensures 
-    (fun h0 _ h1 ->modifies1 out h0 h1 /\  as_nat h1 out < prime /\ as_seq h1 out == felem_sub_seq (as_seq h0 arg1) (as_seq h0 arg2)))
-
-let p256_sub arg1 arg2 out = 
-  let h0 = ST.get() in 
-    let arg1_0 = index arg1 (size 0) in 
-    let arg1_1 = index arg1 (size 1) in 
-    let arg1_2 = index arg1 (size 2) in 
-    let arg1_3 = index arg1 (size 3) in 
-    
-    let arg2_0 = index arg2 (size 0) in 
-    let arg2_1 = index arg2 (size 1) in 
-    let arg2_2 = index arg2 (size 2) in 
-    let arg2_3 = index arg2 (size 3) in 
-
-    let a = (arg1_0, arg1_1, arg1_2, arg1_3) in 
-    let b = (arg2_0, arg2_1, arg2_2, arg2_3) in 
-
-    let (r0, r1, r2, r3) = felem_sub a b in 
-    
-    upd out (size 0) r0;
-    upd out (size 1) r1;
-    upd out (size 2) r2;
-    upd out (size 3) r3;
-
-    let h1 = ST.get() in 
-  assert(Lib.Sequence.equal (as_seq h1 out) (felem_sub_seq (as_seq h0 arg1) (as_seq h0 arg2)));
-  ()
-
-
-#set-options "--z3rlimit 100"
-inline_for_extraction noextract 
-val solinas_fast_reduction_partially_opened: c: felem8 ->result : felem ->   Stack unit   
-  (requires (fun h ->  live h result)) 
-  (ensures (fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result == D.wide_as_nat4 c % prime ))
-
-let solinas_fast_reduction_partially_opened c result = 
-  let (r0, r1, r2, r3) = solinas_reduction c in 
-  upd result (size 0) r0;
-  upd result (size 1) r1;
-  upd result (size 2) r2;
-  upd result (size 3) r3
-
 inline_for_extraction noextract 
 val toDomain: value: felem -> result: felem ->  Stack unit 
   (requires fun h ->  as_nat h value < prime /\ live h value /\live h result /\ eq_or_disjoint value result)
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result = toDomain_ (as_nat h0 value)) 
  
 let toDomain value result = 
-  let value0 = index value (size 0) in 
-  let value1 = index value (size 1) in 
-  let value2 = index value (size 2) in 
-  let value3 = index value (size 3) in 
-  let multipliedByPow256 = shift_256 (value0, value1, value2, value3) in 
-  solinas_fast_reduction_partially_opened multipliedByPow256 result 
+  push_frame();
+    let multBuffer = create (size 8) (u64 0) in 
+    shift_256_impl value multBuffer;
+    solinas_reduction_impl multBuffer result;
+  pop_frame()  
+
 
 
 let pointToDomain p result = 

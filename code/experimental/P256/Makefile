@@ -93,7 +93,7 @@ $(GENERATED_DIR)/Makefile.include: $(ALL_KRML_FILES) | .depend
 	-no-prefix 'Hacl.Impl.P256' \
 	-bundle 'Lib.*' \
 	-bundle 'Spec.*' \
-	-bundle 'Hacl.Impl.P256=Hacl.Impl.P256,Hacl.Spec.P256.*,Hacl.Spec.Curve25519.*,Hacl.Impl.Curve25519.*' \
+	-bundle 'Hacl.Impl.P256=Hacl.Impl.P256,Hacl.Impl.LowLevel,Hacl.Impl.SolinasReduction,Hacl.Spec.P256.*,Hacl.Spec.Curve25519.*,Hacl.Impl.Curve25519.*' \
 	-library 'C,FStar' \
 	-drop 'LowStar,Spec,Prims,Lib,C.Loops.*,Hacl.Spec.P256.Lemmas' \
 	-add-include '"c/Lib_PrintBuffer.h"' \

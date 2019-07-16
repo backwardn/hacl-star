@@ -42,15 +42,6 @@ let fromDomain a =
 
 let toDomain_ a = (a * pow2 256) % prime
 
-
-val toDomain: a: felem4{as_nat4 a < prime} -> Tot (result: felem4 {as_nat4 result = toDomain_ (as_nat4 a)})
-
-let toDomain a = 
-  let open Hacl.Spec.P256.SolinasReduction  in 
-  let multiplied = Core.shift_256 a in 
-  solinas_reduction multiplied
-
-
 let lemmaFromDomain a = ()
 
 let lemmaToDomain a = ()
@@ -80,8 +71,9 @@ let lemmaFromDomainToDomainModuloPrime a =
   modulo_distributivity_mult_last_two a 1 1 (pow2 256) (modp_inv2 (pow2 256)) prime
 
 (* it is the key lemma of Montgomery Multiplication, showing that it's correct (i.e. mm(a, b) = a * b * 2^-256 *)
+(*
 val lemmaMontgomeryMultiplicationCorrect: a: felem4{as_nat4 a < prime} -> b: felem4{as_nat4 b < prime} -> Lemma (
-  let aDomain = toDomain a in 
+  let aDomain = toDomain_ a in 
   let bDomain = toDomain b in 
   let multInDomain = Core.montgomery_multiplication aDomain bDomain in 
   let multResultFromDomain = fromDomain multInDomain in 
@@ -103,7 +95,7 @@ let lemmaMontgomeryMultiplicationCorrect a b =
   let multFromDomain = fromDomain multInDomain in 
   lemma_mod_mul_distr_l (as_nat4 a * as_nat4 b *pow2 256) (modp_inv2 (pow2 256)) prime;
   modulo_distributivity_mult_last_two (as_nat4 a) (as_nat4 b) 1 (pow2 256) (modp_inv2 (pow2 256)) prime
-
+*)
 
 (* the lemma shows the equivalence between toDomain(a:nat) and toDomain(a % prime) *)
 val inDomain_mod_is_not_mod: a: int -> Lemma (toDomain_ a == toDomain_ (a % prime))

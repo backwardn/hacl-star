@@ -398,3 +398,27 @@ val lemma_equality: a: felem4 -> b: felem4 -> Lemma
       if  (uint_v a_0 = uint_v b_0 && uint_v a_1 = uint_v b_1 && uint_v a_2 = uint_v b_2 && uint_v a_3 = uint_v b_3) then as_nat4 a == as_nat4 b else as_nat4 a <> as_nat4 b)
 
 let lemma_equality a b = ()
+
+
+
+assume val neq_mask_lemma: #t:inttype -> a:uint_t t SEC -> b:uint_t t SEC -> Lemma
+  (requires True)
+  (ensures  (v a <> v b ==> v (neq_mask a b) == maxint t) /\
+            (v a == v b ==> v (neq_mask a b) == 0))
+
+
+val cmovznz4_lemma: cin: uint64 -> x: uint64 -> y: uint64 -> Lemma (
+  let mask = neq_mask cin (u64 0) in 
+  let r = logor (logand y mask) (logand x (lognot mask)) in 
+  if uint_v cin = 0 then uint_v r == uint_v x else uint_v r == uint_v y)
+
+let cmovznz4_lemma cin x y = 
+  let x2 = neq_mask cin (u64 0) in 
+      neq_mask_lemma cin (u64 0);
+  let x3 = logor (logand y x2) (logand x (lognot x2)) in
+  let ln = lognot (neq_mask cin (u64 0)) in 
+    log_and y x2; 
+    log_not_lemma x2;
+    log_and x ln;
+    log_or (logand y x2) (logand x (lognot (x2)))
+

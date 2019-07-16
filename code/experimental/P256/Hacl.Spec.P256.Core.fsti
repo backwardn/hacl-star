@@ -23,15 +23,6 @@ inline_for_extraction noextract
 val felem_sub: arg1: felem4 {as_nat4 arg1 < prime} -> arg2: felem4 {as_nat4 arg2 < prime} -> Tot (r : felem4 {as_nat4 r < prime /\ as_nat4 r == (as_nat4 arg1 - as_nat4 arg2) % prime})
 
 inline_for_extraction noextract
-val get_high_part: a: uint64 -> Tot (r: uint32{uint_v r == uint_v a / (pow2 32)})
-
-inline_for_extraction noextract
-val get_low_part: a: uint64 -> Tot (r: uint32{uint_v r == uint_v a % (pow2 32)}) 
-
-
-val store_high_low_u: high: uint32 -> low: uint32 -> Tot (r: uint64 {uint_v r = uint_v high * pow2 32+ uint_v low})
-
-inline_for_extraction noextract
 val reduction_prime_2prime: a: felem4 -> Tot (r:felem4{as_nat4 r == as_nat4 a % prime})
 
 inline_for_extraction noextract 
