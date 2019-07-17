@@ -47,7 +47,7 @@ val lemma_for_multiplication_1:
   Lemma (ensures (
     let p256 = (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) in 
     let (x8, c) = add4 a b in 
-    let (x16, r0, r1, r2, r3) = sub4 c p256 in 
+    let (x16, (r0, r1, r2, r3)) = sub4 c p256 in 
     uint_v x8 == 1 ==> uint_v x16 == 1))
 
 let lemma_for_multiplication_1 a b = 
@@ -55,7 +55,7 @@ let lemma_for_multiplication_1 a b =
   assert_norm(prime < pow2 256);
   assert_norm(as_nat4 p256 == prime);
   let (x8, c) = add4 a b in 
-  let (x16, r0, r1, r2, r3) = sub4 c p256 in   
+  let (x16, (r0, r1, r2, r3)) = sub4 c p256 in   
   admit();
   lemma_nat_4 c
 
@@ -76,25 +76,14 @@ val lemma_add4_zero: a: felem4 -> b: felem4 -> Lemma (let (c, r) = add4 a b in
 
 let lemma_add4_zero a b = ()
   
-(*val lemma_adding_prime: a: felem4{as_nat4 a < prime}  -> b: felem4{as_nat4 b < prime} -> Lemma (let (c, r) = sub4 a b in 
+assume val lemma_adding_prime: a: felem4{as_nat4 a < prime}  -> b: felem4{as_nat4 b < prime} -> 
+Lemma (let (c, (r0, r1, r2, r3)) = sub4 a b in 
   if as_nat4 a < as_nat4 b then 
-    (as_nat4 a - as_nat4 b) % prime == (as_nat4 r - pow2 256 + prime) 
+    (as_nat4 a - as_nat4 b) % prime == (as_nat4 (r0, r1, r2, r3) - pow2 256 + prime) 
   else
-     (as_nat4 a - as_nat4 b) % prime == as_nat4 r)
+     (as_nat4 a - as_nat4 b) % prime == as_nat4 (r0, r1, r2, r3))
 
-let lemma_adding_prime a b = 
-  let (c, r) = sub4 a b in 
-  if as_nat4 a < as_nat4 b then 
-    begin 
-      let result = as_nat4 r - pow2 256 in 
-      small_modulo_lemma_extended (result + prime) prime;
-      modulo_addition_lemma result prime 1
-      end
-  else
-    begin
-      small_modulo_lemma_extended (as_nat4 r) prime
-    end
-*)
+
 
 
 val lemma_enough_to_carry: a: felem4 -> b: felem4 -> Lemma (
