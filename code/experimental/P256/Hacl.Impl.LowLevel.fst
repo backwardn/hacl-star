@@ -230,6 +230,8 @@ let cmovznz4 cin x y r =
     cmovznz4_lemma cin (Seq.index x 3) (Seq.index y 3)
 
 
+#reset-options "--z3refresh --z3rlimit 200"
+
 val reduction_prime_2prime_impl: x: felem -> result: felem -> 
   Stack unit
     (requires fun h -> live h x /\ live h result /\ eq_or_disjoint x result)
@@ -241,12 +243,35 @@ val reduction_prime_2prime_impl: x: felem -> result: felem ->
       )
     )
 
+#reset-options "--z3refresh --z3rlimit 300"
+
+val lemma_reduction1: a: nat {a < pow2 256} -> r: nat{if a >= prime then r = a - prime else r = a} -> 
+  Lemma (r = a % prime)
+
+let lemma_reduction1 a r = 
+  assert_norm (pow2 256 - prime < prime);
+  assert(if a >= prime then a - prime < prime else True);
+  assert(if a >= prime then r < prime else True);
+  assert(if a >= prime then r = a % prime else True);
+  assert(if a < prime then r < prime else True);
+  assert(if a < prime then r = a % prime else True);
+  assert(r = a % prime)
+
+
+
 let reduction_prime_2prime_impl x result = 
   push_frame();
   let tempBuffer = create (size 4) (u64 0) in 
     recall_contents prime_buffer (Lib.Sequence.of_list p256_prime_list);
+        let h0 = ST.get() in 
     let c = sub4_il x prime_buffer tempBuffer in 
+      let h1 = ST.get() in 
+      assert(felem_seq_as_nat (as_seq h1 tempBuffer) = felem_seq_as_nat (as_seq h0 x) - prime + uint_v c * pow2 256);
+
+      assert(let x = felem_seq_as_nat (as_seq h0 x) in if x < prime then uint_v c = 1 else uint_v c = 0);
     cmovznz4 c tempBuffer x result;
+      let h2 = ST.get() in 
+    lemma_reduction1 (felem_seq_as_nat (as_seq h0 x)) (felem_seq_as_nat (as_seq h2 result));
   pop_frame()  
 
 
@@ -263,15 +288,54 @@ val reduction_prime_2prime_with_carry_impl: cin: uint64 -> x: felem -> result: f
       )
     )  
 
+val lemma_r1: a: nat -> Lemma (if a < prime then a % prime == a else True)
+
+let lemma_r1 a = ()
+
+
 let reduction_prime_2prime_with_carry_impl cin x result = 
   push_frame();
     let tempBuffer = create (size 4) (u64 0) in 
     let tempBufferForSubborrow = create (size 1) (u64 0) in 
     recall_contents prime_buffer (Lib.Sequence.of_list p256_prime_list);
+      let h0  = ST.get() in 
     let c = sub4_il x prime_buffer tempBuffer in
+      let h1 = ST.get() in 
+	assert(let x = felem_seq_as_nat (as_seq h0 x) in if x < prime then uint_v c = 1 else uint_v c = 0);
+	assert(felem_seq_as_nat (as_seq h1 tempBuffer)  = felem_seq_as_nat (as_seq h0 x) - prime + uint_v c * pow2 256);
     let carry = sub_borrow c cin (u64 0) tempBufferForSubborrow in 
-    assert(if uint_v cin > 0 then uint_v carry == 0 else if uint_v c = 0 then uint_v carry = 0 else uint_v carry = 1);
-    cmovznz4 carry tempBuffer x result;
+      assert(if uint_v cin > 0 then uint_v carry == 0 else if uint_v c = 0 then uint_v carry = 0 else uint_v carry = 1);
+      cmovznz4 carry tempBuffer x result;
+      let h3 = ST.get() in 
+      modulo_addition_lemma (felem_seq_as_nat (as_seq h3 result)) prime 1;
+      assert((felem_seq_as_nat (as_seq h3 result) + prime) % prime = (felem_seq_as_nat (as_seq h3 result)) % prime);
+      lemma_r1 (felem_seq_as_nat (as_seq h3 result));
+      
+      assert(let resultN = felem_seq_as_nat (as_seq h3 result) in 
+	if uint_v cin = 1 then 
+	  if uint_v c = 0 then 
+	    resultN = felem_seq_as_nat (as_seq h0 x) - prime /\
+	    (felem_seq_as_nat (as_seq h0 x) + uint_v cin * pow2 256) % prime = resultN
+	  else 
+	    resultN = felem_seq_as_nat (as_seq h0 x) - prime + pow2 256 /\
+	    resultN < prime /\
+	    resultN % prime == resultN  /\
+	    (felem_seq_as_nat (as_seq h0 x) + uint_v cin * pow2 256) % prime == resultN  
+       else 
+        True );
+
+      assert(let resultN = felem_seq_as_nat (as_seq h3 result) in 
+	if uint_v cin = 0 then 
+	  if uint_v c = 0 then 
+	    uint_v carry = 0 /\
+	    resultN = felem_seq_as_nat (as_seq h0 x) - prime /\
+	    (felem_seq_as_nat (as_seq h0 x) + uint_v carry * pow2 256) % prime  == resultN
+	  else 
+	    uint_v carry = 1 /\
+	    resultN = felem_seq_as_nat (as_seq h0 x) /\
+	    (felem_seq_as_nat (as_seq h0 x) + uint_v cin * pow2 256) % prime  = resultN % prime 
+	  else True  );
+ 
  pop_frame()   
 
 
@@ -437,26 +501,32 @@ let p256_sub arg1 arg2 out =
     lemma_t_computation2 t;
     assert(let out = as_seq h1 out in let x = as_seq h0 arg1 in let y = as_seq h0 arg2 in 
       felem_seq_as_nat out - uint_v t * pow2 256 == felem_seq_as_nat x - felem_seq_as_nat y);
-
+    assert(if felem_seq_as_nat (as_seq h0 arg1) < felem_seq_as_nat (as_seq h0 arg2) then uint_v t == 1 else uint_v t == 0);
+    
   let t0 = (u64 0) -. t in 
   let t1 = ((u64 0) -. t) >>. (size 32) in 
   let t2 = u64 0 in 
   let t3 = t -. (t <<. (size 32)) in 
-
+    assert(if uint_v t = 1 then uint_v t0 + uint_v t1 * pow2 64 + uint_v t2 * pow2 128 + uint_v t3 * pow2 192 == prime else True);
+    modulo_addition_lemma  (let x = as_seq h0 arg1 in let y = as_seq h0 arg2 in (felem_seq_as_nat x - felem_seq_as_nat y)) prime 1;
+    assert(let x = as_seq h0 arg1 in let y = as_seq h0 arg2 in  (felem_seq_as_nat x - felem_seq_as_nat y + prime) % prime = (felem_seq_as_nat x - felem_seq_as_nat y) % prime);
 
   let c = add4_variables out (u64 0)  t0 t1 t2 t3 out in 
     let h2 = ST.get() in 
-      assert(
-      let result = as_seq h2 out in 
+      assert(let result = as_seq h2 out in 
       let x = as_seq h0 arg1 in let y = as_seq h0 arg2 in 
       let s = uint_v t0 + uint_v t1 * pow2 64 + uint_v t2 * pow2 128 + uint_v t3 * pow2 192 in 
       if felem_seq_as_nat x - felem_seq_as_nat y >= 0 then 
-  begin
-  modulo_lemma (felem_seq_as_nat x - felem_seq_as_nat y) prime;
-  felem_seq_as_nat result == (felem_seq_as_nat x - felem_seq_as_nat y) % prime
-  end
+      begin
+	  modulo_lemma (felem_seq_as_nat x - felem_seq_as_nat y) prime;
+	  felem_seq_as_nat result == (felem_seq_as_nat x - felem_seq_as_nat y) % prime
+      end
       else
-  felem_seq_as_nat result == (felem_seq_as_nat x - felem_seq_as_nat y) % prime 
+          begin
+	    modulo_lemma (felem_seq_as_nat result) prime;
+            felem_seq_as_nat result == (felem_seq_as_nat x - felem_seq_as_nat y) % prime
+	   
+	  end
   );
 
     pop_frame()
