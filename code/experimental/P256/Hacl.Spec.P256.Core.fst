@@ -337,6 +337,31 @@ let add8_without_carry (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5,
   assert(uint_v carry = 0);
   (r0, r1, r2, r3, r4, r5, r6, r7)
 
+#reset-options "--z3refresh --z3rlimit 500"
+
+val lemma_add: a: felem8 -> b: felem8{wide_as_nat4 a + wide_as_nat4 b < pow2 512} -> Lemma 
+  (
+    let (carry, r0, r1, r2, r3, r4, r5, r6, r7) = add8 a b in 
+     wide_as_nat4 (r0, r1, r2, r3, r4, r5, r6, r7) == wide_as_nat4 a + wide_as_nat4 b)
+     
+
+let lemma_add a b = 
+  let (carry, r0, r1, r2, r3, r4, r5, r6, r7) = add8 a b in 
+    assert(uint_v carry * pow2 512 + wide_as_nat4 (r0, r1, r2, r3, r4, r5, r6, r7) = wide_as_nat4 a  + wide_as_nat4 b);
+    assert(uint_v carry * pow2 512 + wide_as_nat4 (r0, r1, r2, r3, r4, r5, r6, r7) < pow2 512);
+    assert(uint_v carry = 0);
+    assert(wide_as_nat4 (r0, r1, r2, r3, r4, r5, r6, r7) = wide_as_nat4 a  + wide_as_nat4 b)
+
+
+inline_for_extraction noextract
+val add8_without_carry1: a: felem8 {wide_as_nat4 a < prime * prime} -> b: felem8 {wide_as_nat4 b < pow2 320}  -> Tot (r:felem8 {wide_as_nat4 r = wide_as_nat4 a + wide_as_nat4 b})
+
+let add8_without_carry1 (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7) =
+  let (carry, r0, r1, r2, r3, r4, r5, r6, r7)  = add8 (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7) in 
+  assert(uint_v carry * pow2 512 + wide_as_nat4 (r0, r1, r2, r3, r4, r5, r6, r7) == wide_as_nat4 (a0, a1, a2, a3, a4, a5, a6, a7) + wide_as_nat4 (b0, b1, b2, b3, b4, b5, b6, b7));
+  assert_norm(prime * prime  + pow2 320 < pow2 512);   
+  lemma_add (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7); 
+  (r0, r1, r2, r3, r4, r5, r6, r7)
 
 #reset-options "--z3refresh --z3rlimit 300"
 
@@ -404,30 +429,42 @@ val lemma_less_than_primes : a: nat {a < prime} -> b: nat {b < prime} -> Lemma (
 
 
 private let mul_lemma_ (a: nat) (b: nat) (c: nat) : Lemma (requires (a < c /\ b < c)) (ensures (a * b < c * c)) = ()
+private let mul_lemma_st (a: nat) (b: nat) (c: nat) : Lemma (requires (a <= c /\ b <= c)) (ensures (a * b <= c * c)) = ()
+
 private let mul_lemma_1 (a: nat) (c: nat) (b: pos) : Lemma (requires (a < c)) (ensures (a * b < c * b)) = ()
 
 private let add_l (a: nat) (b: nat) (c: nat) (d: nat) : Lemma (requires a < c /\ b < d) (ensures (a + b < c + d)) = ()
+
 private let add_l2 (a: nat) (b: nat) (c: nat) (d: nat) : Lemma (requires a <= c /\ b < d) (ensures (a + b < c + d)) = ()
 
+#reset-options "--z3rlimit 100 --z3refresh"  
+
+private let reduced_prime_sq (a: nat {a < prime}) (b: nat {b < prime}) : Lemma (a * b < prime * prime - 2 * prime + 2) = 
+  mul_lemma_ a b prime;
+  assert(a <= prime - 1);
+  assert(b <= prime - 1);
+  mul_lemma_st a b prime;
+  assert(a * b <= (prime -1) * (prime -1));
+  assert(a * b <= prime * prime - 2 * prime + 1)
 
 
-(* to prove *)
 let lemma_less_than_primes a b = 
   let s = 64 in 
   let t = a * b in
     mul_lemma_ a b prime;
-    assume(t < prime * prime -  2 * prime + 1);
+    reduced_prime_sq a b; 
+    assert(t < prime * prime -  2 * prime + 2);
   let t1 = t % pow2 64 in 
   let t2 = t1 * prime in 
   let t3 = t + t2 in 
   let tU = t3 / pow2 64 in 
     mul_lemma_1 t1 (pow2 64) prime;
-    add_l t t2 (prime * prime -  2 * prime + 1) (pow2 64 * prime);
-    assert(t3 < (prime * prime -  2 * prime + 1 + pow2 64 * prime));
-    assert(tU <= (prime * prime -  2 * prime + 1 + pow2 64 * prime) / pow2 64);
+    add_l t t2 (prime * prime -  2 * prime + 2) (pow2 64 * prime);
+    assert(t3 < (prime * prime -  2 * prime + 2 + pow2 64 * prime));
+    assert(tU <= (prime * prime -  2 * prime + 2 + pow2 64 * prime) / pow2 64);
 
   let tNew0 = tU in 
-    let r = (prime * prime -  2 * prime + 1 + pow2 64 * prime) / pow2 64 in 
+    let r = (prime * prime -  2 * prime + 2 + pow2 64 * prime) / pow2 64 in 
     assert(tNew0 <= r); 
   let t1 = tNew0 % pow2 s in 
   let t2 = t1 * prime in 
@@ -504,25 +541,26 @@ let montgomery_multiplication_one_round (a0, a1, a2, a3, a4, a5, a6, a7) (prim0,
 #reset-options "--z3refresh --z3rlimit  500" 
 let montgomery_multiplication (a0, a1, a2, a3) (b0, b1, b2, b3) = 
   let (prim0, prim1, prim2, prim3) = upload_prime () in 
+  assert_norm(as_nat4 (prim0, prim1, prim2, prim3) == prime);
   assert_norm(prime < pow2 256);
   assert_norm (pow2 256 * pow2 256 = pow2 512);
-  assert_norm (pow2 320 + pow2 512 < pow2 513);
+  assert_norm (pow2 320 + pow2 512 < pow2 513); 
  
   border_felem4 (a0, a1, a2, a3) ;
   border_felem4 (b0, b1, b2, b3) ;
   lemma_mult_lt_sqr (as_nat4 (a0, a1, a2, a3)) (as_nat4 (b0, b1, b2, b3)) (pow2 256);
-  
-  let (t_0, t_1, t_2, t_3, t_4, t_5, t_6, t_7) = mul4 (a0, a1, a2, a3)  (b0, b1, b2, b3) in 
-  let t1 = mod_64 (t_0, t_1, t_2, t_3, t_4, t_5, t_6, t_7) in 
-  let (t2_0, t2_1, t2_2, t2_3, t2_4, t2_5, t2_6, t2_7) = shortened_mul (prim0, prim1, prim2, prim3) t1 in 
-  let (t3_8, t3_0, t3_1, t3_2, t3_3, t3_4, t3_5, t3_6, t3_7) = add8 (t_0, t_1, t_2, t_3, t_4, t_5, t_6, t_7) (t2_0, t2_1, t2_2, t2_3, t2_4, t2_5, t2_6, t2_7) in 
-  let (st0, st1, st2, st3, st4, st5, st6, st7) = shift_9 (t3_0, t3_1, t3_2, t3_3, t3_4, t3_5, t3_6, t3_7, t3_8) in  
-    lemma_div_lt (as_nat9 (t3_0, t3_1, t3_2, t3_3, t3_4, t3_5, t3_6, t3_7, t3_8)) 513 64;
-    
-    mult_one_round (wide_as_nat4 (t_0, t_1, t_2, t_3, t_4, t_5, t_6, t_7)) (as_nat4 (a0, a1, a2, a3) * as_nat4  (b0, b1, b2, b3) );
-    lemma_mul_nat (as_nat4  (a0, a1, a2, a3)) (as_nat4  (b0, b1, b2, b3)) (modp_inv2 (pow2 64));
 
-  let (st10, st11, st12, st13, st14, st15, st16, st17)  = montgomery_multiplication_one_round (st0, st1, st2, st3, st4, st5, st6, st7) (prim0, prim1, prim2, prim3) in
+    let (t_0, t_1, t_2, t_3, t_4, t_5, t_6, t_7) = mul4 (a0, a1, a2, a3)  (b0, b1, b2, b3) in 
+    let t1 = mod_64 (t_0, t_1, t_2, t_3, t_4, t_5, t_6, t_7) in 
+    let (t2_0, t2_1, t2_2, t2_3, t2_4, t2_5, t2_6, t2_7) = shortened_mul (prim0, prim1, prim2, prim3) t1 in 
+      mul_lemma_ (as_nat4(a0, a1, a2, a3)) (as_nat4(b0, b1, b2, b3)) prime;
+    let (t3_0, t3_1, t3_2, t3_3, t3_4, t3_5, t3_6, t3_7) = add8_without_carry1 (t_0, t_1, t_2, t_3, t_4, t_5, t_6, t_7) (t2_0, t2_1, t2_2, t2_3, t2_4, t2_5, t2_6, t2_7) in  
+    let (st0, st1, st2, st3, st4, st5, st6, st7) = shift_8 (t3_0, t3_1, t3_2, t3_3, t3_4, t3_5, t3_6, t3_7) in  
+      lemma_div_lt (wide_as_nat4 (t3_0, t3_1, t3_2, t3_3, t3_4, t3_5, t3_6, t3_7)) 513 64; 
+      mult_one_round (wide_as_nat4 (t_0, t_1, t_2, t_3, t_4, t_5, t_6, t_7)) (as_nat4 (a0, a1, a2, a3) * as_nat4  (b0, b1, b2, b3) );
+      lemma_mul_nat (as_nat4  (a0, a1, a2, a3)) (as_nat4  (b0, b1, b2, b3)) (modp_inv2 (pow2 64));
+
+    let (st10, st11, st12, st13, st14, st15, st16, st17)  = montgomery_multiplication_one_round (st0, st1, st2, st3, st4, st5, st6, st7) (prim0, prim1, prim2, prim3) in
     montgomery_multiplication_one_round_proof (st0, st1, st2, st3, st4, st5, st6, st7)  (st10, st11, st12, st13, st14, st15, st16, st17) (as_nat4  (a0, a1, a2, a3) * as_nat4 (b0, b1, b2, b3) * modp_inv2 (pow2 64));
     lemma_mul_nat4 (as_nat4  (a0, a1, a2, a3)) (as_nat4 (b0, b1, b2, b3)) (modp_inv2 (pow2 64)) (modp_inv2(pow2 64));
   let (st20, st21, st22, st23, st24, st25, st26, st27) = montgomery_multiplication_one_round (st10, st11, st12, st13, st14, st15, st16, st17) (prim0, prim1, prim2, prim3) in 
