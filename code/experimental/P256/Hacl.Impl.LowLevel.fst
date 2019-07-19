@@ -489,7 +489,7 @@ let p256_double arg1 out =
 
 val p256_sub: arg1: felem -> arg2: felem -> out: felem -> Stack unit 
   (requires 
-    (fun h0 -> live h0 out /\ live h0 arg1 /\ live h0 arg2 /\ eq_or_disjoint arg1 out /\ disjoint arg2 out /\
+    (fun h0 -> live h0 out /\ live h0 arg1 /\ live h0 arg2 /\ eq_or_disjoint arg1 out /\ eq_or_disjoint arg2 out /\
     as_nat h0 arg1 < prime /\ as_nat h0 arg2 < prime))
     (ensures (fun h0 _ h1 -> modifies1 out h0 h1 /\ 
       (
