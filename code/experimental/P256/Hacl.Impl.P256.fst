@@ -112,31 +112,7 @@ val multByTwo: a: felem -> result: felem -> Stack unit
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_seq h1 result == mm_byTwo_seq (as_seq h0 a) /\ as_nat h1 result < prime)
 
 let multByTwo a out = 
-    push_frame();
-    
-  let a0 = index a (size 0) in 
-  let a1 = index a (size 1) in 
-  let a2 = index a (size 2) in 
-  let a3 = index a (size 3) in 
-
-  let r0 = sub out (size 0) (size 1) in 
-  let r1 = sub out (size 1) (size 1) in 
-  let r2 = sub out (size 2) (size 1) in 
-  let r3 = sub out (size 3) (size 1) in 
-  
-  let cc = add_carry (u64 0) a0 a0 r0 in 
-  let cc = add_carry cc a1 a1 r1 in 
-  let cc = add_carry cc a2 a2 r2 in 
-  let cc = add_carry cc a3 a3 r3 in 
-
-  let t = cc in 
-  let cc = add_carry cc (index r0 (size 0)) (u64 0) r0 in 
-  let cc = add_carry cc (index r1 (size 0)) ((u64 0) -. (t <<. (size 32))) r1 in 
-  let cc = add_carry cc (index r2 (size 0)) ((u64 0) -. t) r2 in 
-  let _  = add_carry cc (index r3 (size 0)) ((t <<. (size 32)) -. (t <<. (size 1))) r3 in 
-
-  let h1 = ST.get() in 
-  pop_frame();
+  p256_add a a out;
   admit();
   ()
 

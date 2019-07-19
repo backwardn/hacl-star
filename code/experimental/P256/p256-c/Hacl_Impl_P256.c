@@ -1825,29 +1825,7 @@ static void quatre(uint64_t *a, uint64_t *result)
 
 static void multByTwo(uint64_t *a, uint64_t *out)
 {
-  uint64_t a0 = a[0U];
-  uint64_t a1 = a[1U];
-  uint64_t a2 = a[2U];
-  uint64_t a3 = a[3U];
-  uint64_t *r0 = out;
-  uint64_t *r1 = out + (uint32_t)1U;
-  uint64_t *r2 = out + (uint32_t)2U;
-  uint64_t *r3 = out + (uint32_t)3U;
-  uint64_t cc = Hacl_Impl_LowLevel_add_carry((uint64_t)0U, a0, a0, r0);
-  uint64_t cc1 = Hacl_Impl_LowLevel_add_carry(cc, a1, a1, r1);
-  uint64_t cc2 = Hacl_Impl_LowLevel_add_carry(cc1, a2, a2, r2);
-  uint64_t cc3 = Hacl_Impl_LowLevel_add_carry(cc2, a3, a3, r3);
-  uint64_t t = cc3;
-  uint64_t cc4 = Hacl_Impl_LowLevel_add_carry(cc3, r0[0U], (uint64_t)0U, r0);
-  uint64_t
-  cc5 = Hacl_Impl_LowLevel_add_carry(cc4, r1[0U], (uint64_t)0U - (t << (uint32_t)32U), r1);
-  uint64_t cc6 = Hacl_Impl_LowLevel_add_carry(cc5, r2[0U], (uint64_t)0U - t, r2);
-  uint64_t
-  uu____0 =
-    Hacl_Impl_LowLevel_add_carry(cc6,
-      r3[0U],
-      (t << (uint32_t)32U) - (t << (uint32_t)1U),
-      r3);
+  Hacl_Impl_LowLevel_p256_add(a, a, out);
 }
 
 static void multByThree(uint64_t *a, uint64_t *result)
