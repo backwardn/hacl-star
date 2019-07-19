@@ -117,6 +117,19 @@ noextract
 val mm_byEight_seq: a: felem_seq {felem_seq_as_nat a < prime} -> Tot (r: felem_seq {felem_seq_as_nat r < prime /\
   felem_seq_as_nat r = toDomain_ (8 * fromDomain_ (felem_seq_as_nat a) % prime)})
 
+
+val lemma_add_same_value_is_by_three: a: felem_seq {felem_seq_as_nat a < prime} -> 
+  Lemma (let two = mm_byTwo_seq a in let three = felem_add_seq a two in three  == mm_byThree_seq a)
+
+
+val lemma_add_same_value_is_by_four: a: felem_seq {felem_seq_as_nat a < prime} -> 
+  Lemma (let two = mm_byTwo_seq a in let four = mm_byTwo_seq two  in four  == mm_byFour_seq a)
+
+
+val lemma_add_same_value_is_by_eight: a: felem_seq {felem_seq_as_nat a < prime} -> 
+  Lemma (let two = mm_byTwo_seq a in let four = mm_byTwo_seq two in let eight = mm_byTwo_seq four in eight  == mm_byEight_seq a)
+
+
 noextract 
 val mm_byMinusThree_seq: a: felem_seq {felem_seq_as_nat a < prime} -> Tot (r: felem_seq {felem_seq_as_nat r < prime /\
   felem_seq_as_nat r = toDomain_ ((-3) * fromDomain_ (felem_seq_as_nat a) % prime)})

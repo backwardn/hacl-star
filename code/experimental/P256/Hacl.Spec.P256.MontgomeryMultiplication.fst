@@ -557,33 +557,41 @@ let mm_byEight_seq a =
     inDomain_mod_is_not_mod (8 * fromDomain_ (as_nat4 a_tuple));
     r
 
-
-val lemma_add_same_value_is_by_three: a: felem_seq {felem_seq_as_nat a < prime} -> 
-  Lemma (let two = mm_byTwo_seq a in let three = felem_add_seq two a in three  == mm_byThree_seq a)
-
 let lemma_add_same_value_is_by_three a = 
   let two = mm_byTwo_seq a in 
-  let three = felem_add_seq two a in 
+  let three = felem_add_seq a two in 
   let r = mm_byThree_seq a in 
   let a_ = felem_seq_as_nat a in
   
-  assert(felem_seq_as_nat two == toDomain_ (2 * fromDomain_ a_ % prime));
-  assert(felem_seq_as_nat three = toDomain_ ((2 * fromDomain_ a_ % prime + fromDomain_ a_) % prime));
-  assert(felem_seq_as_nat three = toDomain_ (((2 * fromDomain_ a_) % prime + fromDomain_ a_) % prime));
   lemma_mod_add_distr (fromDomain_ a_) (2 * fromDomain_ a_) prime;
-  assert(felem_seq_as_nat three = toDomain_ (((3 * fromDomain_ a_)) % prime));
-  assert(felem_seq_as_nat r = toDomain_ ((3 * fromDomain_ a_) % prime));
   lemma_eq_funct r three
 
 
-val lemma_add_same_value_is_by_four: a: felem_seq {felem_seq_as_nat a < prime} -> 
-  Lemma (felem_add_seq a a  == mm_byTwo_seq a)
+let lemma_add_same_value_is_by_four a = 
+  let two = mm_byTwo_seq a in 
+  let four = mm_byTwo_seq two in 
+  let r = mm_byFour_seq a in 
+  let a_ = felem_seq_as_nat a in 
+  
+  assert(felem_seq_as_nat four = toDomain_ (((2 * fromDomain_ a_) % prime + (2 * fromDomain_ a_) % prime) % prime));
+  lemma_mod_add_distr ((2 * fromDomain_ a_) % prime) (2 * fromDomain_ a_) prime;
+  lemma_mod_add_distr (2 * fromDomain_ a_) (2 * fromDomain_ a_) prime;
+  lemma_eq_funct r four
 
 
-val lemma_add_same_value_is_by_eight: a: felem_seq {felem_seq_as_nat a < prime} -> 
-  Lemma (felem_add_seq a a  == mm_byTwo_seq a)
+let lemma_add_same_value_is_by_eight a = 
+  let two = mm_byTwo_seq a in 
+  let four = mm_byTwo_seq two in 
+  let eight = mm_byTwo_seq four in 
+  let r = mm_byEight_seq a in 
+  let a_ = felem_seq_as_nat a in 
+  
+  lemma_mod_add_distr ((2 * fromDomain_ a_) % prime) (2 * fromDomain_ a_) prime;
+  lemma_mod_add_distr (2 * fromDomain_ a_) (2 * fromDomain_ a_) prime;
+  lemma_mod_mul_distr_r 2 (4 * fromDomain_ a_) prime;
 
-
+  lemma_eq_funct r eight
+  
 
 
 let mm_byMinusThree_seq a = 

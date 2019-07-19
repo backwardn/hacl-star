@@ -424,7 +424,7 @@ let lemma_t_computation2 t =
 #set-options "--z3rlimit 500" 
 val p256_add: arg1: felem -> arg2: felem ->  out: felem -> Stack unit 
   (requires (fun h0 ->  
-    live h0 arg1 /\ live h0 arg2 /\ live h0 out /\ disjoint arg1 out /\ eq_or_disjoint arg2 out /\
+    live h0 arg1 /\ live h0 arg2 /\ live h0 out /\ eq_or_disjoint arg1 out /\ eq_or_disjoint arg2 out /\
     (
       let arg1_as_seq = as_seq h0 arg1 in let arg2_as_seq = as_seq h0 arg2 in 
       felem_seq_as_nat arg1_as_seq < prime /\ felem_seq_as_nat arg2_as_seq < prime 

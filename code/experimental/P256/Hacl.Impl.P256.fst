@@ -108,7 +108,7 @@ let quatre a result =
 
 
 val multByTwo: a: felem -> result: felem -> Stack unit 
-  (requires fun h -> live h a /\ live h result /\ disjoint a result /\ as_nat h a < prime )
+  (requires fun h -> live h a /\ live h result /\ eq_or_disjoint a result /\ as_nat h a < prime )
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_seq h1 result == mm_byTwo_seq (as_seq h0 a) /\ as_nat h1 result < prime)
 
 let multByTwo a out = 
@@ -125,20 +125,24 @@ val multByThree: a: felem -> result: felem -> Stack unit
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result < prime /\as_seq h1 result == mm_byThree_seq (as_seq h0 a))
 
 let multByThree a result = 
+    let h0 = ST.get() in 
   multByTwo a result;
   p256_add a result result;
-  admit()
+  lemma_add_same_value_is_by_three (as_seq h0 a)
 
 
 val multByFour: a: felem -> result: felem -> Stack unit 
-  (requires fun h -> live h a /\ live h result /\ disjoint a result /\ as_nat h a < prime )
+  (requires fun h -> live h a /\ live h result /\ eq_or_disjoint a result /\ as_nat h a < prime )
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result < prime /\ as_seq h1 result == mm_byFour_seq (as_seq h0 a))
 
 let multByFour a result  = 
+    let h0 = ST.get() in 
   multByTwo a result;
+    let h1 = ST.get() in 
+    assert(as_seq h1 result == mm_byTwo_seq (as_seq h0 a));
   multByTwo result result;
-  admit()
-
+    let h2 = ST.get() in 
+    lemma_add_same_value_is_by_four (as_seq h0 a)
 
 
 val multByEight: a: felem -> result: felem -> Stack unit 
@@ -146,10 +150,11 @@ val multByEight: a: felem -> result: felem -> Stack unit
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result < prime /\ as_seq h1 result == mm_byEight_seq (as_seq h0 a))
 
 let multByEight a result  = 
+    let h0 = ST.get() in 
   multByTwo a result;
   multByTwo result result;
   multByTwo result result;
-  admit()
+  lemma_add_same_value_is_by_eight (as_seq h0 a)
 
 
 val multByMinusThree: a: felem -> result: felem -> Stack unit 
