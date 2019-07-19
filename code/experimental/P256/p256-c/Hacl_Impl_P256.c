@@ -1823,502 +1823,57 @@ static void quatre(uint64_t *a, uint64_t *result)
     result);
 }
 
-static void multByTwo(uint64_t *a, uint64_t *result)
+static void multByTwo(uint64_t *a, uint64_t *out)
 {
   uint64_t a0 = a[0U];
   uint64_t a1 = a[1U];
   uint64_t a2 = a[2U];
   uint64_t a3 = a[3U];
-  uint64_t mask = (uint64_t)0x7fffffffffffffffU;
-  uint64_t carry0;
-  if (mask < a0)
-    carry0 = (uint64_t)1U;
-  else
-    carry0 = (uint64_t)0U;
-  uint64_t carry1;
-  if (mask < a1)
-    carry1 = (uint64_t)1U;
-  else
-    carry1 = (uint64_t)0U;
-  uint64_t carry2;
-  if (mask < a2)
-    carry2 = (uint64_t)1U;
-  else
-    carry2 = (uint64_t)0U;
-  uint64_t carry3;
-  if (mask < a3)
-    carry3 = (uint64_t)1U;
-  else
-    carry3 = (uint64_t)0U;
-  uint64_t a0_updated = (a0 << (uint32_t)1U) + (uint64_t)0U;
-  uint64_t a1_updated = (a1 << (uint32_t)1U) + carry0;
-  uint64_t a2_updated = (a2 << (uint32_t)1U) + carry1;
-  uint64_t a3_updated = (a3 << (uint32_t)1U) + carry2;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut =
-    Hacl_Spec_P256_Core_reduction_prime_2prime_with_carry(carry3,
-      (
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){
-          .fst = a0_updated,
-          .snd = a1_updated,
-          .thd = a2_updated,
-          .f3 = a3_updated
-        }
-      ));
-  uint64_t r0 = scrut.fst;
-  uint64_t r1 = scrut.snd;
-  uint64_t r2 = scrut.thd;
-  uint64_t r3 = scrut.f3;
-  result[0U] = r0;
-  result[1U] = r1;
-  result[2U] = r2;
-  result[3U] = r3;
+  uint64_t *r0 = out;
+  uint64_t *r1 = out + (uint32_t)1U;
+  uint64_t *r2 = out + (uint32_t)2U;
+  uint64_t *r3 = out + (uint32_t)3U;
+  uint64_t cc = Hacl_Impl_LowLevel_add_carry((uint64_t)0U, a0, a0, r0);
+  uint64_t cc1 = Hacl_Impl_LowLevel_add_carry(cc, a1, a1, r1);
+  uint64_t cc2 = Hacl_Impl_LowLevel_add_carry(cc1, a2, a2, r2);
+  uint64_t cc3 = Hacl_Impl_LowLevel_add_carry(cc2, a3, a3, r3);
+  uint64_t t = cc3;
+  uint64_t cc4 = Hacl_Impl_LowLevel_add_carry(cc3, r0[0U], (uint64_t)0U, r0);
+  uint64_t
+  cc5 = Hacl_Impl_LowLevel_add_carry(cc4, r1[0U], (uint64_t)0U - (t << (uint32_t)32U), r1);
+  uint64_t cc6 = Hacl_Impl_LowLevel_add_carry(cc5, r2[0U], (uint64_t)0U - t, r2);
+  uint64_t
+  uu____0 =
+    Hacl_Impl_LowLevel_add_carry(cc6,
+      r3[0U],
+      (t << (uint32_t)32U) - (t << (uint32_t)1U),
+      r3);
 }
 
 static void multByThree(uint64_t *a, uint64_t *result)
 {
-  uint64_t a0 = a[0U];
-  uint64_t a1 = a[1U];
-  uint64_t a2 = a[2U];
-  uint64_t a3 = a[3U];
-  uint64_t mask = (uint64_t)0x7fffffffffffffffU;
-  uint64_t carry0;
-  if (mask < a0)
-    carry0 = (uint64_t)1U;
-  else
-    carry0 = (uint64_t)0U;
-  uint64_t carry1;
-  if (mask < a1)
-    carry1 = (uint64_t)1U;
-  else
-    carry1 = (uint64_t)0U;
-  uint64_t carry2;
-  if (mask < a2)
-    carry2 = (uint64_t)1U;
-  else
-    carry2 = (uint64_t)0U;
-  uint64_t carry3;
-  if (mask < a3)
-    carry3 = (uint64_t)1U;
-  else
-    carry3 = (uint64_t)0U;
-  uint64_t a0_updated = (a0 << (uint32_t)1U) + (uint64_t)0U;
-  uint64_t a1_updated = (a1 << (uint32_t)1U) + carry0;
-  uint64_t a2_updated = (a2 << (uint32_t)1U) + carry1;
-  uint64_t a3_updated = (a3 << (uint32_t)1U) + carry2;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut =
-    Hacl_Spec_P256_Core_reduction_prime_2prime_with_carry(carry3,
-      (
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){
-          .fst = a0_updated,
-          .snd = a1_updated,
-          .thd = a2_updated,
-          .f3 = a3_updated
-        }
-      ));
-  uint64_t m0 = scrut.fst;
-  uint64_t m1 = scrut.snd;
-  uint64_t m2 = scrut.thd;
-  uint64_t m3 = scrut.f3;
-  K___uint64_t_K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut0 =
-    Hacl_Spec_Curve25519_Field64_Core_add4((
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){ .fst = m0, .snd = m1, .thd = m2, .f3 = m3 }
-      ),
-      ((K___uint64_t_uint64_t_uint64_t_uint64_t){ .fst = a0, .snd = a1, .thd = a2, .f3 = a3 }));
-  uint64_t x8 = scrut0.fst;
-  K___uint64_t_uint64_t_uint64_t_uint64_t c = scrut0.snd;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  result1 = Hacl_Spec_P256_Core_reduction_prime_2prime_with_carry(x8, c);
-  K___uint64_t_uint64_t_uint64_t_uint64_t scrut1 = result1;
-  uint64_t th0 = scrut1.fst;
-  uint64_t th1 = scrut1.snd;
-  uint64_t th2 = scrut1.thd;
-  uint64_t th3 = scrut1.f3;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut2 = { .fst = th0, .snd = th1, .thd = th2, .f3 = th3 };
-  uint64_t r0 = scrut2.fst;
-  uint64_t r1 = scrut2.snd;
-  uint64_t r2 = scrut2.thd;
-  uint64_t r3 = scrut2.f3;
-  result[0U] = r0;
-  result[1U] = r1;
-  result[2U] = r2;
-  result[3U] = r3;
+  multByTwo(a, result);
+  Hacl_Impl_LowLevel_p256_add(a, result, result);
 }
 
 static void multByFour(uint64_t *a, uint64_t *result)
 {
-  uint64_t a0 = a[0U];
-  uint64_t a1 = a[1U];
-  uint64_t a2 = a[2U];
-  uint64_t a3 = a[3U];
-  uint64_t mask0 = (uint64_t)0x7fffffffffffffffU;
-  uint64_t carry00;
-  if (mask0 < a0)
-    carry00 = (uint64_t)1U;
-  else
-    carry00 = (uint64_t)0U;
-  uint64_t carry10;
-  if (mask0 < a1)
-    carry10 = (uint64_t)1U;
-  else
-    carry10 = (uint64_t)0U;
-  uint64_t carry20;
-  if (mask0 < a2)
-    carry20 = (uint64_t)1U;
-  else
-    carry20 = (uint64_t)0U;
-  uint64_t carry30;
-  if (mask0 < a3)
-    carry30 = (uint64_t)1U;
-  else
-    carry30 = (uint64_t)0U;
-  uint64_t a0_updated0 = (a0 << (uint32_t)1U) + (uint64_t)0U;
-  uint64_t a1_updated0 = (a1 << (uint32_t)1U) + carry00;
-  uint64_t a2_updated0 = (a2 << (uint32_t)1U) + carry10;
-  uint64_t a3_updated0 = (a3 << (uint32_t)1U) + carry20;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut =
-    Hacl_Spec_P256_Core_reduction_prime_2prime_with_carry(carry30,
-      (
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){
-          .fst = a0_updated0,
-          .snd = a1_updated0,
-          .thd = a2_updated0,
-          .f3 = a3_updated0
-        }
-      ));
-  uint64_t m0 = scrut.fst;
-  uint64_t m1 = scrut.snd;
-  uint64_t m2 = scrut.thd;
-  uint64_t m3 = scrut.f3;
-  uint64_t mask = (uint64_t)0x7fffffffffffffffU;
-  uint64_t carry0;
-  if (mask < m0)
-    carry0 = (uint64_t)1U;
-  else
-    carry0 = (uint64_t)0U;
-  uint64_t carry1;
-  if (mask < m1)
-    carry1 = (uint64_t)1U;
-  else
-    carry1 = (uint64_t)0U;
-  uint64_t carry2;
-  if (mask < m2)
-    carry2 = (uint64_t)1U;
-  else
-    carry2 = (uint64_t)0U;
-  uint64_t carry3;
-  if (mask < m3)
-    carry3 = (uint64_t)1U;
-  else
-    carry3 = (uint64_t)0U;
-  uint64_t a0_updated = (m0 << (uint32_t)1U) + (uint64_t)0U;
-  uint64_t a1_updated = (m1 << (uint32_t)1U) + carry0;
-  uint64_t a2_updated = (m2 << (uint32_t)1U) + carry1;
-  uint64_t a3_updated = (m3 << (uint32_t)1U) + carry2;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut0 =
-    Hacl_Spec_P256_Core_reduction_prime_2prime_with_carry(carry3,
-      (
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){
-          .fst = a0_updated,
-          .snd = a1_updated,
-          .thd = a2_updated,
-          .f3 = a3_updated
-        }
-      ));
-  uint64_t th0 = scrut0.fst;
-  uint64_t th1 = scrut0.snd;
-  uint64_t th2 = scrut0.thd;
-  uint64_t th3 = scrut0.f3;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut1 = { .fst = th0, .snd = th1, .thd = th2, .f3 = th3 };
-  uint64_t r0 = scrut1.fst;
-  uint64_t r1 = scrut1.snd;
-  uint64_t r2 = scrut1.thd;
-  uint64_t r3 = scrut1.f3;
-  result[0U] = r0;
-  result[1U] = r1;
-  result[2U] = r2;
-  result[3U] = r3;
+  multByTwo(a, result);
+  multByTwo(result, result);
 }
 
 static void multByEight(uint64_t *a, uint64_t *result)
 {
-  uint64_t a0 = a[0U];
-  uint64_t a1 = a[1U];
-  uint64_t a2 = a[2U];
-  uint64_t a3 = a[3U];
-  uint64_t mask0 = (uint64_t)0x7fffffffffffffffU;
-  uint64_t carry00;
-  if (mask0 < a0)
-    carry00 = (uint64_t)1U;
-  else
-    carry00 = (uint64_t)0U;
-  uint64_t carry10;
-  if (mask0 < a1)
-    carry10 = (uint64_t)1U;
-  else
-    carry10 = (uint64_t)0U;
-  uint64_t carry20;
-  if (mask0 < a2)
-    carry20 = (uint64_t)1U;
-  else
-    carry20 = (uint64_t)0U;
-  uint64_t carry30;
-  if (mask0 < a3)
-    carry30 = (uint64_t)1U;
-  else
-    carry30 = (uint64_t)0U;
-  uint64_t a0_updated0 = (a0 << (uint32_t)1U) + (uint64_t)0U;
-  uint64_t a1_updated0 = (a1 << (uint32_t)1U) + carry00;
-  uint64_t a2_updated0 = (a2 << (uint32_t)1U) + carry10;
-  uint64_t a3_updated0 = (a3 << (uint32_t)1U) + carry20;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut =
-    Hacl_Spec_P256_Core_reduction_prime_2prime_with_carry(carry30,
-      (
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){
-          .fst = a0_updated0,
-          .snd = a1_updated0,
-          .thd = a2_updated0,
-          .f3 = a3_updated0
-        }
-      ));
-  uint64_t m00 = scrut.fst;
-  uint64_t m10 = scrut.snd;
-  uint64_t m20 = scrut.thd;
-  uint64_t m30 = scrut.f3;
-  uint64_t mask1 = (uint64_t)0x7fffffffffffffffU;
-  uint64_t carry01;
-  if (mask1 < m00)
-    carry01 = (uint64_t)1U;
-  else
-    carry01 = (uint64_t)0U;
-  uint64_t carry11;
-  if (mask1 < m10)
-    carry11 = (uint64_t)1U;
-  else
-    carry11 = (uint64_t)0U;
-  uint64_t carry21;
-  if (mask1 < m20)
-    carry21 = (uint64_t)1U;
-  else
-    carry21 = (uint64_t)0U;
-  uint64_t carry31;
-  if (mask1 < m30)
-    carry31 = (uint64_t)1U;
-  else
-    carry31 = (uint64_t)0U;
-  uint64_t a0_updated1 = (m00 << (uint32_t)1U) + (uint64_t)0U;
-  uint64_t a1_updated1 = (m10 << (uint32_t)1U) + carry01;
-  uint64_t a2_updated1 = (m20 << (uint32_t)1U) + carry11;
-  uint64_t a3_updated1 = (m30 << (uint32_t)1U) + carry21;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut0 =
-    Hacl_Spec_P256_Core_reduction_prime_2prime_with_carry(carry31,
-      (
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){
-          .fst = a0_updated1,
-          .snd = a1_updated1,
-          .thd = a2_updated1,
-          .f3 = a3_updated1
-        }
-      ));
-  uint64_t th00 = scrut0.fst;
-  uint64_t th10 = scrut0.snd;
-  uint64_t th20 = scrut0.thd;
-  uint64_t th30 = scrut0.f3;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut1 = { .fst = th00, .snd = th10, .thd = th20, .f3 = th30 };
-  uint64_t m0 = scrut1.fst;
-  uint64_t m1 = scrut1.snd;
-  uint64_t m2 = scrut1.thd;
-  uint64_t m3 = scrut1.f3;
-  uint64_t mask = (uint64_t)0x7fffffffffffffffU;
-  uint64_t carry0;
-  if (mask < m0)
-    carry0 = (uint64_t)1U;
-  else
-    carry0 = (uint64_t)0U;
-  uint64_t carry1;
-  if (mask < m1)
-    carry1 = (uint64_t)1U;
-  else
-    carry1 = (uint64_t)0U;
-  uint64_t carry2;
-  if (mask < m2)
-    carry2 = (uint64_t)1U;
-  else
-    carry2 = (uint64_t)0U;
-  uint64_t carry3;
-  if (mask < m3)
-    carry3 = (uint64_t)1U;
-  else
-    carry3 = (uint64_t)0U;
-  uint64_t a0_updated = (m0 << (uint32_t)1U) + (uint64_t)0U;
-  uint64_t a1_updated = (m1 << (uint32_t)1U) + carry0;
-  uint64_t a2_updated = (m2 << (uint32_t)1U) + carry1;
-  uint64_t a3_updated = (m3 << (uint32_t)1U) + carry2;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut2 =
-    Hacl_Spec_P256_Core_reduction_prime_2prime_with_carry(carry3,
-      (
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){
-          .fst = a0_updated,
-          .snd = a1_updated,
-          .thd = a2_updated,
-          .f3 = a3_updated
-        }
-      ));
-  uint64_t th0 = scrut2.fst;
-  uint64_t th1 = scrut2.snd;
-  uint64_t th2 = scrut2.thd;
-  uint64_t th3 = scrut2.f3;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut3 = { .fst = th0, .snd = th1, .thd = th2, .f3 = th3 };
-  uint64_t r0 = scrut3.fst;
-  uint64_t r1 = scrut3.snd;
-  uint64_t r2 = scrut3.thd;
-  uint64_t r3 = scrut3.f3;
-  result[0U] = r0;
-  result[1U] = r1;
-  result[2U] = r2;
-  result[3U] = r3;
+  multByTwo(a, result);
+  multByTwo(result, result);
+  multByTwo(result, result);
 }
 
 static void multByMinusThree(uint64_t *a, uint64_t *result)
 {
-  uint64_t a0 = a[0U];
-  uint64_t a1 = a[1U];
-  uint64_t a2 = a[2U];
-  uint64_t a3 = a[3U];
-  uint64_t mask = (uint64_t)0x7fffffffffffffffU;
-  uint64_t carry0;
-  if (mask < a0)
-    carry0 = (uint64_t)1U;
-  else
-    carry0 = (uint64_t)0U;
-  uint64_t carry1;
-  if (mask < a1)
-    carry1 = (uint64_t)1U;
-  else
-    carry1 = (uint64_t)0U;
-  uint64_t carry2;
-  if (mask < a2)
-    carry2 = (uint64_t)1U;
-  else
-    carry2 = (uint64_t)0U;
-  uint64_t carry3;
-  if (mask < a3)
-    carry3 = (uint64_t)1U;
-  else
-    carry3 = (uint64_t)0U;
-  uint64_t a0_updated = (a0 << (uint32_t)1U) + (uint64_t)0U;
-  uint64_t a1_updated = (a1 << (uint32_t)1U) + carry0;
-  uint64_t a2_updated = (a2 << (uint32_t)1U) + carry1;
-  uint64_t a3_updated = (a3 << (uint32_t)1U) + carry2;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut0 =
-    Hacl_Spec_P256_Core_reduction_prime_2prime_with_carry(carry3,
-      (
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){
-          .fst = a0_updated,
-          .snd = a1_updated,
-          .thd = a2_updated,
-          .f3 = a3_updated
-        }
-      ));
-  uint64_t m0 = scrut0.fst;
-  uint64_t m1 = scrut0.snd;
-  uint64_t m2 = scrut0.thd;
-  uint64_t m3 = scrut0.f3;
-  K___uint64_t_K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut1 =
-    Hacl_Spec_Curve25519_Field64_Core_add4((
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){ .fst = m0, .snd = m1, .thd = m2, .f3 = m3 }
-      ),
-      ((K___uint64_t_uint64_t_uint64_t_uint64_t){ .fst = a0, .snd = a1, .thd = a2, .f3 = a3 }));
-  uint64_t x8 = scrut1.fst;
-  K___uint64_t_uint64_t_uint64_t_uint64_t c = scrut1.snd;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  result1 = Hacl_Spec_P256_Core_reduction_prime_2prime_with_carry(x8, c);
-  K___uint64_t_uint64_t_uint64_t_uint64_t scrut2 = result1;
-  uint64_t th00 = scrut2.fst;
-  uint64_t th10 = scrut2.snd;
-  uint64_t th20 = scrut2.thd;
-  uint64_t th30 = scrut2.f3;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut3 = { .fst = th00, .snd = th10, .thd = th20, .f3 = th30 };
-  uint64_t th0 = scrut3.fst;
-  uint64_t th1 = scrut3.snd;
-  uint64_t th2 = scrut3.thd;
-  uint64_t th3 = scrut3.f3;
-  K___uint64_t_uint64_t
-  scrut = Hacl_Spec_Curve25519_Field64_Core_subborrow((uint64_t)0U, th0, (uint64_t)0U);
-  uint64_t o0 = scrut.fst;
-  uint64_t c00 = scrut.snd;
-  K___uint64_t_uint64_t
-  scrut4 = Hacl_Spec_Curve25519_Field64_Core_subborrow((uint64_t)0U, th1, c00);
-  uint64_t o1 = scrut4.fst;
-  uint64_t c10 = scrut4.snd;
-  K___uint64_t_uint64_t
-  scrut5 = Hacl_Spec_Curve25519_Field64_Core_subborrow((uint64_t)0U, th2, c10);
-  uint64_t o2 = scrut5.fst;
-  uint64_t c20 = scrut5.snd;
-  K___uint64_t_uint64_t
-  scrut6 = Hacl_Spec_Curve25519_Field64_Core_subborrow((uint64_t)0U, th3, c20);
-  uint64_t o3 = scrut6.fst;
-  uint64_t c30 = scrut6.snd;
-  K___uint64_t_K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut7 = { .fst = c30, .snd = { .fst = o0, .snd = o1, .thd = o2, .f3 = o3 } };
-  uint64_t r_3 = scrut7.snd.f3;
-  uint64_t r_2 = scrut7.snd.thd;
-  uint64_t r_1 = scrut7.snd.snd;
-  uint64_t r_0 = scrut7.snd.fst;
-  uint64_t c01 = scrut7.fst;
-  uint64_t x2 = ~FStar_UInt64_eq_mask(c01, (uint64_t)0U);
-  uint64_t x3 = (uint64_t)0xffffffffffffffffU & x2 | (uint64_t)0U & ~x2;
-  uint64_t ln = ~~FStar_UInt64_eq_mask(c01, (uint64_t)0U);
-  uint64_t x9 = x3;
-  uint64_t prime_temp_0 = (uint64_t)0xffffffffffffffffU & x9;
-  uint64_t prime_temp_1 = (uint64_t)0xffffffffU & x9;
-  uint64_t prime_temp_2 = (uint64_t)0U;
-  uint64_t prime_temp_3 = (uint64_t)0xffffffff00000001U & x9;
-  K___uint64_t_K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut8 =
-    Hacl_Spec_Curve25519_Field64_Core_add4((
-        (K___uint64_t_uint64_t_uint64_t_uint64_t){
-          .fst = prime_temp_0,
-          .snd = prime_temp_1,
-          .thd = prime_temp_2,
-          .f3 = prime_temp_3
-        }
-      ),
-      ((K___uint64_t_uint64_t_uint64_t_uint64_t){ .fst = r_0, .snd = r_1, .thd = r_2, .f3 = r_3 }));
-  uint64_t r30 = scrut8.snd.f3;
-  uint64_t r20 = scrut8.snd.thd;
-  uint64_t r10 = scrut8.snd.snd;
-  uint64_t r00 = scrut8.snd.fst;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut9 = { .fst = r00, .snd = r10, .thd = r20, .f3 = r30 };
-  uint64_t c0 = scrut9.fst;
-  uint64_t c1 = scrut9.snd;
-  uint64_t c2 = scrut9.thd;
-  uint64_t c3 = scrut9.f3;
-  K___uint64_t_uint64_t_uint64_t_uint64_t
-  scrut10 = { .fst = c0, .snd = c1, .thd = c2, .f3 = c3 };
-  uint64_t r0 = scrut10.fst;
-  uint64_t r1 = scrut10.snd;
-  uint64_t r2 = scrut10.thd;
-  uint64_t r3 = scrut10.f3;
-  result[0U] = r0;
-  result[1U] = r1;
-  result[2U] = r2;
-  result[3U] = r3;
+  multByThree(a, result);
+  uint64_t zeros[4U] = { 0U };
+  Hacl_Impl_LowLevel_p256_sub(zeros, result, result);
 }
 
 static uint64_t isZero_uint64(uint64_t *f)

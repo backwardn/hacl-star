@@ -24,16 +24,6 @@ friend Hacl.Spec.P256.MontgomeryMultiplication
 open FStar.Mul
 
 
-inline_for_extraction
-let basepoint_list : x:list uint64 =
-  [@inline_let]
-  let l =
-    [0xffffffffffffffff; 0xffffffff; 0; 0xffffffff00000001]
-  in
-
-  l
-
-
 inline_for_extraction noextract 
 val toDomain: value: felem -> result: felem ->  Stack unit 
   (requires fun h ->  as_nat h value < prime /\ live h value /\live h result /\ eq_or_disjoint value result)
@@ -121,21 +111,35 @@ val multByTwo: a: felem -> result: felem -> Stack unit
   (requires fun h -> live h a /\ live h result /\ disjoint a result /\ as_nat h a < prime )
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_seq h1 result == mm_byTwo_seq (as_seq h0 a) /\ as_nat h1 result < prime)
 
-let multByTwo a result = 
-  let h0 = ST.get() in 
-    let a0 = index a (size 0) in 
-    let a1 = index a (size 1) in 
-    let a2 = index a (size 2) in 
-    let a3 = index a (size 3) in 
+let multByTwo a out = 
+    push_frame();
+    
+  let a0 = index a (size 0) in 
+  let a1 = index a (size 1) in 
+  let a2 = index a (size 2) in 
+  let a3 = index a (size 3) in 
 
-    let (r0, r1, r2, r3) = shift_left_felem (a0, a1, a2, a3) in 
+  let r0 = sub out (size 0) (size 1) in 
+  let r1 = sub out (size 1) (size 1) in 
+  let r2 = sub out (size 2) (size 1) in 
+  let r3 = sub out (size 3) (size 1) in 
+  
+  let cc = add_carry (u64 0) a0 a0 r0 in 
+  let cc = add_carry cc a1 a1 r1 in 
+  let cc = add_carry cc a2 a2 r2 in 
+  let cc = add_carry cc a3 a3 r3 in 
 
-    upd result (size 0) r0;
-    upd result (size 1) r1;
-    upd result (size 2) r2;
-    upd result (size 3) r3;
+  let t = cc in 
+  let cc = add_carry cc (index r0 (size 0)) (u64 0) r0 in 
+  let cc = add_carry cc (index r1 (size 0)) ((u64 0) -. (t <<. (size 32))) r1 in 
+  let cc = add_carry cc (index r2 (size 0)) ((u64 0) -. t) r2 in 
+  let _  = add_carry cc (index r3 (size 0)) ((t <<. (size 32)) -. (t <<. (size 1))) r3 in 
+
   let h1 = ST.get() in 
-    assert(Lib.Sequence.equal (mm_byTwo_seq (as_seq h0 a)) (as_seq h1 result))
+  pop_frame();
+  admit();
+  ()
+
 
 
 val multByThree: a: felem -> result: felem -> Stack unit 
@@ -143,20 +147,9 @@ val multByThree: a: felem -> result: felem -> Stack unit
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result < prime /\as_seq h1 result == mm_byThree_seq (as_seq h0 a))
 
 let multByThree a result = 
-  let h0 = ST.get() in 
-    let a0 = index a (size 0) in 
-    let a1 = index a (size 1) in 
-    let a2 = index a (size 2) in 
-    let a3 = index a (size 3) in 
-
-    let (r0, r1, r2, r3) = multByThree_tuple (a0, a1, a2, a3) in 
-
-    upd result (size 0) r0;
-    upd result (size 1) r1;
-    upd result (size 2) r2;
-    upd result (size 3) r3;
-  let h1 = ST.get() in 
-    assert(Lib.Sequence.equal (mm_byThree_seq (as_seq h0 a)) (as_seq h1 result))
+  multByTwo a result;
+  p256_add a result result;
+  admit()
 
 
 val multByFour: a: felem -> result: felem -> Stack unit 
@@ -164,20 +157,10 @@ val multByFour: a: felem -> result: felem -> Stack unit
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result < prime /\ as_seq h1 result == mm_byFour_seq (as_seq h0 a))
 
 let multByFour a result  = 
-  let h0 = ST.get() in 
-    let a0 = index a (size 0) in 
-    let a1 = index a (size 1) in 
-    let a2 = index a (size 2) in 
-    let a3 = index a (size 3) in 
+  multByTwo a result;
+  multByTwo result result;
+  admit()
 
-    let (r0, r1, r2, r3) = multByFour_tuple(a0, a1, a2, a3) in 
-
-    upd result (size 0) r0;
-    upd result (size 1) r1;
-    upd result (size 2) r2;
-    upd result (size 3) r3;
-   let h1 = ST.get() in 
-    assert(Lib.Sequence.equal (mm_byFour_seq (as_seq h0 a)) (as_seq h1 result))
 
 
 val multByEight: a: felem -> result: felem -> Stack unit 
@@ -185,20 +168,10 @@ val multByEight: a: felem -> result: felem -> Stack unit
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result < prime /\ as_seq h1 result == mm_byEight_seq (as_seq h0 a))
 
 let multByEight a result  = 
-  let h0 = ST.get() in 
-    let a0 = index a (size 0) in 
-    let a1 = index a (size 1) in 
-    let a2 = index a (size 2) in 
-    let a3 = index a (size 3) in 
-
-    let (r0, r1, r2, r3) = multByEight_tuple(a0, a1, a2, a3) in 
-
-    upd result (size 0) r0;
-    upd result (size 1) r1;
-    upd result (size 2) r2;
-    upd result (size 3) r3;
-  let h1 = ST.get() in 
-    assert(Lib.Sequence.equal (mm_byEight_seq (as_seq h0 a)) (as_seq h1 result))
+  multByTwo a result;
+  multByTwo result result;
+  multByTwo result result;
+  admit()
 
 
 val multByMinusThree: a: felem -> result: felem -> Stack unit 
@@ -206,20 +179,12 @@ val multByMinusThree: a: felem -> result: felem -> Stack unit
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result < prime /\ as_seq h1 result == mm_byMinusThree_seq (as_seq h0 a))
 
 let multByMinusThree a result  = 
-  let h0 = ST.get() in 
-    let a0 = index a (size 0) in 
-    let a1 = index a (size 1) in 
-    let a2 = index a (size 2) in 
-    let a3 = index a (size 3) in 
-
-    let (r0, r1, r2, r3) = multByMinusThree_tuple(a0, a1, a2, a3) in 
-
-    upd result (size 0) r0;
-    upd result (size 1) r1;
-    upd result (size 2) r2; 
-    upd result (size 3) r3;
- let h1 = ST.get() in 
-   assert(Lib.Sequence.equal (mm_byMinusThree_seq (as_seq h0 a)) (as_seq h1 result))
+    push_frame();
+    multByThree a result;
+    let zeros = create (size 4) (u64 0) in 
+    p256_sub zeros result result;
+  pop_frame()  ;
+  admit()
 
 
 val isZero_uint64:  f: felem -> Stack uint64
@@ -302,6 +267,8 @@ val point_double_compute_x3: x3: felem ->
     as_seq h1 x3 == point_double_compute_x3_seq (as_seq h0 s) (as_seq h0 m) /\ 
     as_nat h1 x3 < prime
    )
+
+#reset-options "--z3rlimit 500 --z3refresh" 
 
 let point_double_compute_x3 x3 s m tempBuffer = 
    let twoS = sub tempBuffer (size 0) (size 4) in 
@@ -437,6 +404,7 @@ let inverse_mod_prime value result tempBuffer =
     toDomain value resultForDomain;
     Hacl.Spec.P256.MontgomeryMultiplication.exponent resultForDomain result tempBufferForExponent;
     fromDomain result result
+
 
 inline_for_extraction noextract 
 val copy_conditional: out: felem -> x: felem -> mask: uint64{uint_v mask = 0 \/ uint_v mask = pow2 64 - 1} -> Stack unit 

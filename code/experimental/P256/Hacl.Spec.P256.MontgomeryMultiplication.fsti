@@ -49,6 +49,17 @@ val lemmaFromDomainToDomain: a: nat { a < prime} -> Lemma (toDomain_ (fromDomain
 (* the lemma shows the equivalence between toDomain(a:nat) and toDomain(a % prime) *)
 val inDomain_mod_is_not_mod: a: int -> Lemma (toDomain_ a == toDomain_ (a % prime))
 
+val additionInDomain2Nat: a: nat {a < prime} -> b: nat {b < prime} -> Lemma 
+  (
+    let result = (a + b) % prime in 
+    result = toDomain_ (fromDomain_ a + fromDomain_ b)
+  )
+  
+val substractionInDomain2Nat: a: nat {a < prime} -> b: nat { b < prime} -> Lemma 
+  ((a - b) % prime == toDomain_ (fromDomain_ a - fromDomain_ b))
+  
+
+
 noextract
 val pow: a:nat -> b:nat -> res:nat
 
@@ -56,7 +67,8 @@ val power_distributivity: a: nat -> b: nat -> c: pos -> Lemma ((pow (a % c) b) %
 
 noextract 
 val felem_add_seq: a: felem_seq{felem_seq_as_nat a < prime} -> b: felem_seq{felem_seq_as_nat b < prime} -> 
-  Tot (r: felem_seq {felem_seq_as_nat r < prime /\ felem_seq_as_nat r = toDomain_ ((fromDomain_ (felem_seq_as_nat a) + fromDomain_ (felem_seq_as_nat b)) % prime)})
+  Tot (r: felem_seq {felem_seq_as_nat r < prime /\ 
+    felem_seq_as_nat r = toDomain_ ((fromDomain_ (felem_seq_as_nat a) + fromDomain_ (felem_seq_as_nat b)) % prime)})
 
 noextract
 val felem_sub_seq: a: felem_seq{felem_seq_as_nat a < prime} -> b: felem_seq{felem_seq_as_nat b < prime} -> 

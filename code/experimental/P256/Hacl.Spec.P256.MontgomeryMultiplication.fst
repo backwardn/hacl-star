@@ -144,6 +144,13 @@ let additionInDomain #k #l a b =
   assert(as_nat4 result = toDomain_ (k + l))
 
 
+val additionInDomainNat: #k: nat -> #l: nat -> a: nat {a == toDomain_ k /\ a < prime} -> b: nat {b == toDomain_ l /\ b < prime} ->
+  Lemma (let result = (a + b) % prime in result == toDomain_ (k + l))
+
+let additionInDomainNat #k #l a b = 
+  modulo_distributivity (k * pow2 256) (l * pow2 256) prime
+
+
 (* the lemma shows that the result of addition in domain (moved out of domain) is the same if the variables were out of domain *)
 val additionInDomain2: a: felem4{as_nat4 a < prime} -> b: felem4 {as_nat4 b < prime} -> Lemma (let result = felem_add a b in 
   as_nat4 result = toDomain_ (fromDomain_ (as_nat4 a) + fromDomain_ (as_nat4 b)))
@@ -154,6 +161,14 @@ let additionInDomain2 a b =
   lemmaFromDomainToDomain (as_nat4 a);
   lemmaFromDomainToDomain (as_nat4 b);
   additionInDomain #k #l a b
+
+
+let additionInDomain2Nat a b = 
+  let k = fromDomain_ a in 
+  let l = fromDomain_ b in 
+  lemmaFromDomainToDomain a;
+  lemmaFromDomainToDomain b;
+  additionInDomainNat #k #l a b
 
 
 (* the lemma shows the equivalence between fromDomain(a:nat) and fromDomain(a % prime) *)
@@ -182,6 +197,13 @@ let subtractionInDomain #k #l a b =
   lemma_mod_sub_distr (as_nat4 a) (l * pow2 256) prime;
   lemma_mod_add_distr (-l * pow2 256) (k * pow2 256) prime
 
+val substractionInDomainNat: #k: nat -> #l: nat -> a: nat {a == toDomain_ k /\ a < prime} -> b: nat {b == toDomain_ l /\ b < prime} -> 
+  Lemma ((a - b) % prime  == toDomain_ (k - l))
+
+let substractionInDomainNat #k #l a b = 
+  lemma_mod_sub_distr a (l * pow2 256) prime;
+  lemma_mod_add_distr (-l * pow2 256) (k * pow2 256) prime
+
 
 val substractionInDomain2: a: felem4{as_nat4 a < prime} -> b: felem4{as_nat4 b < prime} -> Lemma (let result = felem_sub a b in 
   as_nat4 result = toDomain_ (fromDomain_ (as_nat4 a) - fromDomain_ (as_nat4 b)))
@@ -192,6 +214,14 @@ let substractionInDomain2 a b =
   lemmaFromDomainToDomain (as_nat4 a);
   lemmaFromDomainToDomain (as_nat4 b);
   subtractionInDomain #k #l a b
+
+let substractionInDomain2Nat a b = 
+  let k = fromDomain_ a in 
+  let l = fromDomain_ b in 
+  lemmaFromDomainToDomain a;
+  lemmaFromDomainToDomain b;
+  substractionInDomainNat #k #l a b
+
 
 
 let rec pow a b =

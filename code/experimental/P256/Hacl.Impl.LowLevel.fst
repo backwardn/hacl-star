@@ -12,6 +12,7 @@ open Hacl.Spec.P256.Lemmas
 open Hacl.Spec.Curve25519.Field64.Core 
 open Hacl.Spec.Curve25519.Field64.Definition
 open Hacl.Impl.Curve25519.Field64.Core
+open Hacl.Spec.P256.MontgomeryMultiplication
 
 open FStar.Math.Lemmas
 
@@ -420,6 +421,63 @@ let lemma_t_computation2 t =
   assert_norm(18446744073709551615 + 4294967295 * pow2 64 + 18446744069414584321 * pow2 192 = prime)
 
 
+val lemma_equ_felem: a: nat{ a < pow2 64} -> b: nat {b < pow2 64} -> c: nat {c < pow2 64} -> d: nat {d < pow2 64} ->
+   a1: nat{a1 < pow2 64} -> b1: nat {b1 < pow2 64} -> c1: nat {c1 < pow2 64} -> d1: nat {d1 < pow2 64} ->
+  Lemma (requires (
+    a + b * pow2 64 + c * pow2 64 * pow2 64 + d *  pow2 64 * pow2 64 * pow2 64 == 
+    a1 + b1 * pow2 64 + c1 * pow2 64 * pow2 64  + d1 *  pow2 64 * pow2 64 * pow2 64))
+  (ensures (a == a1 /\ b == b1 /\ c == c1 /\ d == d1))
+  
+let lemma_equ_felem a b c d  a1 b1 c1 d1  = 
+  assert(a = a1 + b1 * pow2 64 + c1 * pow2 128 + d1 * pow2 192 -  b * pow2 64 - c * pow2 128 - d * pow2 192);
+  assert(a == a1);
+  assert(b == b1);
+  assert(c == c1);
+  assert(d == d1)
+
+
+
+val lemma_eq_funct: a: felem_seq -> b: felem_seq -> Lemma
+   (requires (felem_seq_as_nat a == felem_seq_as_nat b))
+   (ensures (a == b))
+
+let lemma_eq_funct a b = 
+  let a_seq = felem_seq_as_nat a in 
+  let b_seq = felem_seq_as_nat b in 
+
+  
+  let a0 = Lib.Sequence.index a 0 in 
+  let a1 =  Lib.Sequence.index a 1 in 
+  let a2 =  Lib.Sequence.index  a 2 in 
+  let a3 =  Lib.Sequence.index a 3 in 
+
+  let b0 = Lib.Sequence.index b 0 in 
+  let b1 = Lib.Sequence.index b 1 in 
+  let b2 = Lib.Sequence.index b 2 in 
+  let b3 = Lib.Sequence.index b 3 in 
+
+  assert(uint_v a0 < pow2 64);
+  assert(uint_v b0 < pow2 64);
+  
+  assert(uint_v a0 < pow2 64);
+  assert(uint_v b0 < pow2 64);
+
+  assert_norm (pow2 64 * pow2 64 = pow2 128);
+  assert_norm (pow2 64 * pow2 64 * pow2 64 = pow2 192);
+  
+  assert(
+  uint_v a0 + uint_v a1 * pow2 64 + uint_v a2 * pow2 128 + uint_v a3 * pow2 192 == 
+  uint_v b0 + uint_v b1 * pow2 64 + uint_v b2 * pow2 128 + uint_v b3 * pow2 192);
+
+  lemma_equ_felem (uint_v a0) (uint_v a1) (uint_v a2) (uint_v a3) (uint_v b0) (uint_v b1) (uint_v b2) (uint_v b3);
+
+  assert(Lib.Sequence.index a 0 == Lib.Sequence.index b 0);
+  assert(Lib.Sequence.index a 1 == Lib.Sequence.index b 1);
+  assert(Lib.Sequence.index a 2 == Lib.Sequence.index b 2);
+  assert(Lib.Sequence.index a 3 == Lib.Sequence.index b 3);  
+
+  assert(Lib.Sequence.equal a b)
+
 
 #set-options "--z3rlimit 500" 
 val p256_add: arg1: felem -> arg2: felem ->  out: felem -> Stack unit 
@@ -436,9 +494,11 @@ val p256_add: arg1: felem -> arg2: felem ->  out: felem -> Stack unit
       let x = as_seq h0 arg1 in  
       let y = as_seq h0 arg2 in 
       let out = as_seq h1 out in 
-      felem_seq_as_nat out == (felem_seq_as_nat x + felem_seq_as_nat y) % prime
+      felem_seq_as_nat out == (felem_seq_as_nat x + felem_seq_as_nat y) % prime /\
+      out == felem_add_seq (as_seq h0 arg1) (as_seq h0 arg2)
     )
   ))
+
 
 let p256_add arg1 arg2 out = 
   let h0 = ST.get() in   
@@ -447,7 +507,12 @@ let p256_add arg1 arg2 out =
       assert(let out = as_seq h1 out in let x = as_seq h0 arg1 in let y = as_seq h0 arg2 in 
       felem_seq_as_nat out + uint_v t * pow2 256 == felem_seq_as_nat x + felem_seq_as_nat y);
   lemma_t_computation t;
-  reduction_prime_2prime_with_carry_impl t out out
+  reduction_prime_2prime_with_carry_impl t out out;
+    let h2 = ST.get() in 
+    assert(felem_seq_as_nat (as_seq h2 out) == (felem_seq_as_nat (as_seq h0 arg1) + felem_seq_as_nat (as_seq h0 arg2)) % prime);
+    additionInDomain2Nat (felem_seq_as_nat (as_seq h0 arg1)) (felem_seq_as_nat (as_seq h0 arg2));
+    inDomain_mod_is_not_mod (fromDomain_ (felem_seq_as_nat (as_seq h0 arg1)) + fromDomain_ (felem_seq_as_nat (as_seq h0 arg2)));
+    lemma_eq_funct (as_seq h2 out) (felem_add_seq (as_seq h0 arg1) (as_seq h0 arg2))
 
 
 #set-options "--z3rlimit 500" 
@@ -486,10 +551,11 @@ val p256_sub: arg1: felem -> arg2: felem -> out: felem -> Stack unit
     as_nat h0 arg1 < prime /\ as_nat h0 arg2 < prime))
     (ensures (fun h0 _ h1 -> modifies1 out h0 h1 /\ 
       (
-  let x = as_seq h0 arg1 in 
-  let y = as_seq h0 arg2 in 
-  let out = as_seq h1 out in 
-  felem_seq_as_nat out == (felem_seq_as_nat x - felem_seq_as_nat y) % prime
+	let x = as_seq h0 arg1 in 
+	let y = as_seq h0 arg2 in 
+	let out = as_seq h1 out in 
+	felem_seq_as_nat out == (felem_seq_as_nat x - felem_seq_as_nat y) % prime /\
+	out == felem_sub_seq (as_seq h0 arg1) (as_seq h0 arg2)
       )
   ))
 
@@ -525,9 +591,12 @@ let p256_sub arg1 arg2 out =
           begin
 	    modulo_lemma (felem_seq_as_nat result) prime;
             felem_seq_as_nat result == (felem_seq_as_nat x - felem_seq_as_nat y) % prime
-	   
 	  end
   );
 
+    substractionInDomain2Nat (felem_seq_as_nat (as_seq h0 arg1)) (felem_seq_as_nat (as_seq h0 arg2));
+    inDomain_mod_is_not_mod (fromDomain_ (felem_seq_as_nat (as_seq h0 arg1)) - fromDomain_ (felem_seq_as_nat (as_seq h0 arg2)));
+    lemma_eq_funct (as_seq h2 out) (felem_sub_seq (as_seq h0 arg1) (as_seq h0 arg2));
+    
     pop_frame()
     
