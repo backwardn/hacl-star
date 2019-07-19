@@ -108,9 +108,6 @@ let lemmaMontgomeryMultiplicationCorrect a b =
 *)
 
 
-(* the lemma shows the equivalence between toDomain(a:nat) and toDomain(a % prime) *)
-val inDomain_mod_is_not_mod: a: int -> Lemma (toDomain_ a == toDomain_ (a % prime))
-
 let inDomain_mod_is_not_mod a = 
   lemma_mod_mul_distr_l a (pow2 256) prime
 

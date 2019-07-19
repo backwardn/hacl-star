@@ -81,7 +81,6 @@ let computeM px pz =
   lemma_mod_mul_distr_r (-3) (pzD * pzD * pzD * pzD) prime;
   lemma_mod_mul_distr_r 3 (pxD * pxD) prime;
   modulo_distributivity ((-3) * pzD * pzD * pzD * pzD) (3 * pxD * pxD) prime
- 
 
 val computeZ3: 
   py: felem_seq_prime -> 
@@ -97,11 +96,16 @@ let computeZ3 py pz =
   let open FStar.Tactics.Canon in 
 
   let pyD = fromDomain_ (felem_seq_as_nat py) in 
+    lemmaFromDomain (felem_seq_as_nat py);
   let pzD = fromDomain_ (felem_seq_as_nat pz) in 
+    lemmaFromDomain (felem_seq_as_nat pz);
  
   let a = montgomery_multiplication_seq py pz in 
   let b = mm_byTwo_seq a in 
-
+      assert(felem_seq_as_nat a = toDomain_ (fromDomain_ (felem_seq_as_nat py) * fromDomain_ (felem_seq_as_nat pz) % prime));
+      lemmaToDomainAndBackIsTheSame (fromDomain_ (felem_seq_as_nat py) * fromDomain_ (felem_seq_as_nat pz) % prime);
+      assert(felem_seq_as_nat b = toDomain_ (2 * (fromDomain_ (felem_seq_as_nat py) * fromDomain_ (felem_seq_as_nat pz) % prime) % prime));
+      lemma_mod_mul_distr_r 2 (fromDomain_ (felem_seq_as_nat py) * fromDomain_ (felem_seq_as_nat pz)) prime;
   assert_by_tactic (2 * (pyD * pzD) = 2 * pyD * pzD) canon;
   lemmaToDomainAndBackIsTheSame (2 * pyD * pzD % prime)
 

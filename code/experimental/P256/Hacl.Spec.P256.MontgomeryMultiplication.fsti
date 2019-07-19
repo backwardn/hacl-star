@@ -46,6 +46,9 @@ val lemmaToDomainAndBackIsTheSame: a: nat { a < prime} -> Lemma (fromDomain_ (to
 
 val lemmaFromDomainToDomain: a: nat { a < prime} -> Lemma (toDomain_ (fromDomain_ a) == a)
 
+(* the lemma shows the equivalence between toDomain(a:nat) and toDomain(a % prime) *)
+val inDomain_mod_is_not_mod: a: int -> Lemma (toDomain_ a == toDomain_ (a % prime))
+
 noextract
 val pow: a:nat -> b:nat -> res:nat
 
