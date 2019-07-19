@@ -421,64 +421,6 @@ let lemma_t_computation2 t =
   assert_norm(18446744073709551615 + 4294967295 * pow2 64 + 18446744069414584321 * pow2 192 = prime)
 
 
-val lemma_equ_felem: a: nat{ a < pow2 64} -> b: nat {b < pow2 64} -> c: nat {c < pow2 64} -> d: nat {d < pow2 64} ->
-   a1: nat{a1 < pow2 64} -> b1: nat {b1 < pow2 64} -> c1: nat {c1 < pow2 64} -> d1: nat {d1 < pow2 64} ->
-  Lemma (requires (
-    a + b * pow2 64 + c * pow2 64 * pow2 64 + d *  pow2 64 * pow2 64 * pow2 64 == 
-    a1 + b1 * pow2 64 + c1 * pow2 64 * pow2 64  + d1 *  pow2 64 * pow2 64 * pow2 64))
-  (ensures (a == a1 /\ b == b1 /\ c == c1 /\ d == d1))
-  
-let lemma_equ_felem a b c d  a1 b1 c1 d1  = 
-  assert(a = a1 + b1 * pow2 64 + c1 * pow2 128 + d1 * pow2 192 -  b * pow2 64 - c * pow2 128 - d * pow2 192);
-  assert(a == a1);
-  assert(b == b1);
-  assert(c == c1);
-  assert(d == d1)
-
-
-
-val lemma_eq_funct: a: felem_seq -> b: felem_seq -> Lemma
-   (requires (felem_seq_as_nat a == felem_seq_as_nat b))
-   (ensures (a == b))
-
-let lemma_eq_funct a b = 
-  let a_seq = felem_seq_as_nat a in 
-  let b_seq = felem_seq_as_nat b in 
-
-  
-  let a0 = Lib.Sequence.index a 0 in 
-  let a1 =  Lib.Sequence.index a 1 in 
-  let a2 =  Lib.Sequence.index  a 2 in 
-  let a3 =  Lib.Sequence.index a 3 in 
-
-  let b0 = Lib.Sequence.index b 0 in 
-  let b1 = Lib.Sequence.index b 1 in 
-  let b2 = Lib.Sequence.index b 2 in 
-  let b3 = Lib.Sequence.index b 3 in 
-
-  assert(uint_v a0 < pow2 64);
-  assert(uint_v b0 < pow2 64);
-  
-  assert(uint_v a0 < pow2 64);
-  assert(uint_v b0 < pow2 64);
-
-  assert_norm (pow2 64 * pow2 64 = pow2 128);
-  assert_norm (pow2 64 * pow2 64 * pow2 64 = pow2 192);
-  
-  assert(
-  uint_v a0 + uint_v a1 * pow2 64 + uint_v a2 * pow2 128 + uint_v a3 * pow2 192 == 
-  uint_v b0 + uint_v b1 * pow2 64 + uint_v b2 * pow2 128 + uint_v b3 * pow2 192);
-
-  lemma_equ_felem (uint_v a0) (uint_v a1) (uint_v a2) (uint_v a3) (uint_v b0) (uint_v b1) (uint_v b2) (uint_v b3);
-
-  assert(Lib.Sequence.index a 0 == Lib.Sequence.index b 0);
-  assert(Lib.Sequence.index a 1 == Lib.Sequence.index b 1);
-  assert(Lib.Sequence.index a 2 == Lib.Sequence.index b 2);
-  assert(Lib.Sequence.index a 3 == Lib.Sequence.index b 3);  
-
-  assert(Lib.Sequence.equal a b)
-
-
 #set-options "--z3rlimit 500" 
 val p256_add: arg1: felem -> arg2: felem ->  out: felem -> Stack unit 
   (requires (fun h0 ->  

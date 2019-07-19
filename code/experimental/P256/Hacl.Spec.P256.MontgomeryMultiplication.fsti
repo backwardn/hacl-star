@@ -101,6 +101,10 @@ noextract
 val mm_byTwo_seq: a: felem_seq {felem_seq_as_nat a < prime} -> Tot (r: felem_seq {felem_seq_as_nat r < prime /\
   felem_seq_as_nat r = toDomain_ (2 * fromDomain_ (felem_seq_as_nat a) % prime)})
 
+
+val lemma_add_same_value_is_by_two: a: felem_seq {felem_seq_as_nat a < prime} -> 
+  Lemma (felem_add_seq a a  == mm_byTwo_seq a)
+
 noextract 
 val mm_byThree_seq: a: felem_seq {felem_seq_as_nat a < prime} -> Tot (r: felem_seq {felem_seq_as_nat r < prime /\
   felem_seq_as_nat r = toDomain_ (3 * fromDomain_ (felem_seq_as_nat a) % prime )})

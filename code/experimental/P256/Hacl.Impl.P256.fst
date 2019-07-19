@@ -112,9 +112,11 @@ val multByTwo: a: felem -> result: felem -> Stack unit
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_seq h1 result == mm_byTwo_seq (as_seq h0 a) /\ as_nat h1 result < prime)
 
 let multByTwo a out = 
+    let h0 = ST.get() in 
   p256_add a a out;
-  admit();
-  ()
+    let h1 = ST.get() in 
+    assert(let out = as_seq h1 out in out == felem_add_seq (as_seq h0 a) (as_seq h0 a));
+    lemma_add_same_value_is_by_two (as_seq h0 a)
 
 
 
