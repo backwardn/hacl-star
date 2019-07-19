@@ -160,7 +160,9 @@ let modulo_distributivity_mult a b c =
   lemma_mod_mul_distr_r (a%c) b c
 
 
-val modulo_distributivity_mult_last_two: a: int -> b: int -> c: int -> d: int -> e: int -> f: pos -> Lemma ((a * b * c * d * e) % f = (a * b * c * (d * e % f)) % f)
+
+val modulo_distributivity_mult_last_two: a: int -> b: int -> c: int -> d: int -> e: int -> f: pos -> 
+Lemma ((a * b * c * d * e) % f = (a * b * c * ((d * e) % f)) % f)
 
 let modulo_distributivity_mult_last_two a b c d e f = admit()
 

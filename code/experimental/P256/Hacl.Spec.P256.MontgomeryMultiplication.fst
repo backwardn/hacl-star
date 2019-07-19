@@ -26,7 +26,6 @@ open Lib.Loops
 
 let fromDomain_ a = (a * modp_inv2 (pow2 256)) % prime
 
-
 let fromDomainPoint a = 
   let x, y, z = a in 
   fromDomain_ x, fromDomain_ y, fromDomain_ z
@@ -47,20 +46,31 @@ let lemmaFromDomain a = ()
 let lemmaToDomain a = ()
 
 
+#reset-options "--z3rlimit 300 --z3refresh"
+
 let lemmaToDomainAndBackIsTheSame a = 
   let to = toDomain_ a in 
+    lemmaToDomain a;
   let from = fromDomain_ to in 
-  lemma_mod_mul_distr_l (a * pow2 256) (modp_inv2 (pow2 256)) prime;
-  assert_norm (pow2 256 * modp_inv2 (pow2 256) % prime = 1);
-  modulo_distributivity_mult_last_two a 1 1 (pow2 256) (modp_inv2 (pow2 256)) prime
+    lemmaFromDomain to;
+    lemma_mod_mul_distr_l (a * pow2 256) (modp_inv2 (pow2 256)) prime;
+    assert(from = (a * pow2 256 * modp_inv2 (pow2 256)) % prime);
+    assert_norm (pow2 256 * modp_inv2 (pow2 256) % prime = 1);
+  modulo_distributivity_mult_last_two a 1 1 (pow2 256) (modp_inv2 (pow2 256)) prime;
+    assert((a * pow2 256 * modp_inv2 (pow2 256)) % prime == (a * (pow2 256 * modp_inv2 (pow2 256) % prime)) % prime);
+    modulo_lemma a prime;
+    assert(from = a)
 
 
 let lemmaFromDomainToDomain a = 
   let from = fromDomain_ a in 
+    lemmaFromDomain a;
   let to = toDomain_ from in 
+    lemmaToDomain from;
   lemma_mod_mul_distr_l (a * modp_inv2 (pow2 256)) (pow2 256)  prime;
   assert_norm (modp_inv2 (pow2 256) * (pow2 256) % prime = 1);
-  modulo_distributivity_mult_last_two a 1 1 (modp_inv2 (pow2 256)) (pow2 256) prime
+  modulo_distributivity_mult_last_two a 1 1 (modp_inv2 (pow2 256)) (pow2 256) prime;
+  modulo_lemma a prime
 
 
 val lemmaFromDomainToDomainModuloPrime: a: int -> Lemma (a % prime == fromDomain_(toDomain_ a))
@@ -96,6 +106,7 @@ let lemmaMontgomeryMultiplicationCorrect a b =
   lemma_mod_mul_distr_l (as_nat4 a * as_nat4 b *pow2 256) (modp_inv2 (pow2 256)) prime;
   modulo_distributivity_mult_last_two (as_nat4 a) (as_nat4 b) 1 (pow2 256) (modp_inv2 (pow2 256)) prime
 *)
+
 
 (* the lemma shows the equivalence between toDomain(a:nat) and toDomain(a % prime) *)
 val inDomain_mod_is_not_mod: a: int -> Lemma (toDomain_ a == toDomain_ (a % prime))
@@ -327,49 +338,57 @@ let montgomery_multiplication_buffer a b r=
 
 #reset-options "--z3refresh --z3rlimit 100" 
 
+val modulo_distributivity_mult_three: 
+  a: int -> b: int ->  c: int -> d: pos -> Lemma ((a * b  * c) % d = ((a % d) * (b % d) * (c % d)) % d)
+
+
+let modulo_distributivity_mult_three a b c d = 
+  let open FStar.Tactics in 
+  let open FStar.Tactics.Canon in 
+  assert_by_tactic (a * b * c = a * (b * c)) canon;
+  lemma_mod_mul_distr_l a (b * c) d;
+  assert_by_tactic (((a % d) * b * c) % d == (b * ((a % d) * c)) % d) canon;
+  lemma_mod_mul_distr_l b ((a % d) * c) d;
+  lemma_mod_mul_distr_r ((a % d) * (b % d)) c d
+
+
+val modulo_distributivity_mult_four: 
+  a: int -> b: int ->  c: int -> d: nat ->  e: pos -> Lemma ((a * b  * c * d) % e = ((a % e) * (b % e) * (c % e) * (d % e)) % e)
+
+
+let modulo_distributivity_mult_four a b c d e = 
+  let open FStar.Tactics in 
+  let open FStar.Tactics.Canon in 
+  assert_by_tactic ((a * b * c * d) % e == ((a * b * c) * d) % e) canon;
+    assert((a * b * c * d) % e == ((a * b * c) * d) % e);
+  lemma_mod_mul_distr_l (a * b * c) d e;
+    assert((((a * b * c) * d) % e) == ((a * b * c) % e * d) % e);
+  modulo_distributivity_mult_three a b c e;
+    assert((((a * b * c) * d) % e) == (((a % e) * (b % e) * (c % e)) % e * d) % e);
+  lemma_mod_mul_distr_l ((a % e) * (b % e) * (c % e)) d e;  
+    assert(((((a % e) * (b % e) * (c % e)) % e * d) % e) == (((a % e) * (b % e) * (c % e)) * d) % e);
+  lemma_mod_mul_distr_r ((a % e) * (b % e) * (c % e)) d e;
+  assert_by_tactic ((((a % e) * (b % e) * (c % e)) * (d % e)) % e == ((a % e) * (b % e) * (c % e) * (d % e)) % e) canon
+
+
 val lemma_toDomain_reduce_prime3: a: int -> b: int -> c: int -> Lemma (toDomain_ ((a % prime) * (b % prime) * (c % prime)) = toDomain_ (a * b * c))
 
 let lemma_toDomain_reduce_prime3 a b c = 
   inDomain_mod_is_not_mod ((a % prime) * (b % prime) * (c % prime));
-  assert(a % prime * ((b % prime) * (c % prime)) % prime == (a % prime) * (b % prime) * (c % prime) % prime);
-  lemma_mod_mul_distr_l a ((b % prime) * (c % prime)) prime;
-  assert( (a % prime) * (b % prime) * (c % prime) % prime == (b % prime) * ((c % prime) * a) % prime);
-  lemma_mod_mul_distr_l b ((c % prime) * a) prime;
-  assert((a % prime) * (b % prime) * (c % prime) % prime == (a * b * (c % prime)) % prime);
-  lemma_mod_mul_distr_r (a * b) c prime;
-  assert((a % prime) * (b % prime) * (c % prime) % prime == (a * b * c) % prime);
+  assert(toDomain_ (((a % prime) * (b % prime) * (c % prime)) % prime) == toDomain_ ((a % prime) * (b % prime) * (c % prime)));
+    modulo_distributivity_mult_three a b c prime;
+  assert(toDomain_ ((a % prime) * (b % prime) * (c % prime) % prime) = toDomain_ ((a * b * c) % prime));
   inDomain_mod_is_not_mod (a * b * c);
-  assert(toDomain_ ((a % prime) * (b % prime) * (c % prime) % prime) = toDomain_ (a * b * c))
+  assert(toDomain_ ((a * b * c) % prime) = toDomain_ (a * b * c))
 
 
 #reset-options "--z3refresh --z3rlimit 300" 
 val lemma_toDomain_reduce_prime4: a: int -> b: int -> c: int -> d: nat -> Lemma (toDomain_ ((a % prime) * (b % prime) * (c % prime) * (d % prime)) = toDomain_ (a * b * c * d))
 
 let lemma_toDomain_reduce_prime4 a b c d = 
-  let open FStar.Tactics in 
-  let open FStar.Tactics.Canon in 
-  let ap = a % prime in 
-  let bp = b % prime in 
-  let cp = c % prime in 
-  let dp = d % prime in 
-  inDomain_mod_is_not_mod (ap * bp * cp * dp);
-    assert(toDomain_ (ap * bp * cp * dp) == toDomain_ ((ap * bp * cp * dp) % prime));
-    assert_by_tactic (((ap * bp * cp * dp) % prime) == (ap * (bp * cp * dp)) % prime) canon;
-    assert(((ap * bp * cp) * dp) % prime == (ap * (bp * cp * dp)) % prime);
-    lemma_mod_mul_distr_l a (bp * cp * dp) prime;
-    assert(((ap * bp * cp) * dp) % prime == (a * bp * cp * dp) % prime);
-    assert_by_tactic (a * bp * cp * dp == (bp * (a * cp * dp))) canon;
-    lemma_mod_mul_distr_l b (a * cp * dp) prime;
-    assert(bp * (a * cp * dp) % prime == b * (a * cp * dp) % prime);
-    assert_by_tactic (b * (a * cp * dp) == cp * (a * b * dp)) canon;
-    assert((ap * bp * cp * dp) % prime == (cp * (a * b * dp)) % prime);
-    lemma_mod_mul_distr_l c (a * b * dp) prime;
-    assert((ap * bp * cp * dp) % prime == (c * (a * b * dp)) % prime);
-    assert_by_tactic (c * (a * b * dp) == dp * (a * b * c)) canon;
-    lemma_mod_mul_distr_l d (a * b * c) prime;
-    assert((ap * bp * cp * dp) % prime == (d * (a * b * c)) % prime);
-    assert_by_tactic (d * (a * b * c) == (a * b * c * d)) canon;
-    inDomain_mod_is_not_mod (a * b * c * d)
+  inDomain_mod_is_not_mod ((a % prime) * (b % prime) * (c % prime) * (d % prime));
+  modulo_distributivity_mult_four a b c d prime;
+  inDomain_mod_is_not_mod (a * b * c * d)
 
 
 let mm_cube_seq a= 
