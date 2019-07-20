@@ -1006,10 +1006,31 @@ let montgomery_ladder_step r0 r1 tempBuffer scalar i =
   assert(modifies3 r0 r1 tempBuffer h0 h3)
 
 
+val montgomery_ladder: p: point -> q: point ->
+  scalar: lbuffer uint8 (size 32) -> 
+  tempBuffer:  lbuffer uint64 (size 88)  -> 
+  Stack unit
+  (requires fun h -> live h p /\ live h q /\ live h scalar /\  live h tempBuffer /\
+    LowStar.Monotonic.Buffer.all_disjoint [loc p; loc q; loc tempBuffer; loc scalar] /\
+    as_nat h (gsub p (size 0) (size 4)) < prime /\ 
+    as_nat h (gsub p (size 4) (size 4)) < prime /\
+    as_nat h (gsub p (size 8) (size 4)) < prime /\
+	
+    as_nat h (gsub q (size 0) (size 4)) < prime /\  
+    as_nat h (gsub q (size 4) (size 4)) < prime /\
+    as_nat h (gsub q (size 8) (size 4)) < prime )
+  (ensures fun h0 _ h1 -> modifies3 p q tempBuffer h0 h1)
 
-let montgomery_ladder p q scalarSize scalar tempBuffer =  
-  let inv h1 (i: nat {i <= v scalarSize}) = True in 
-  for 0ul scalarSize inv (fun i -> montgomery_ladder_step p q tempBuffer scalar i)
+let montgomery_ladder p q scalar tempBuffer =  
+  let inv h (i: nat {i <= 256}) = live h p /\ live h q /\ live h tempBuffer /\ live h scalar /\     
+    as_nat h (gsub p (size 0) (size 4)) < prime /\ 
+    as_nat h (gsub p (size 4) (size 4)) < prime /\
+    as_nat h (gsub p (size 8) (size 4)) < prime /\
+	
+    as_nat h (gsub q (size 0) (size 4)) < prime /\  
+    as_nat h (gsub q (size 4) (size 4)) < prime /\
+    as_nat h (gsub q (size 8) (size 4)) < prime  in 
+  for 0ul 256ul inv (fun i -> montgomery_ladder_step p q tempBuffer scalar i)
 
 
 let scalarMultiplication p result scalar tempBuffer  = 
@@ -1017,6 +1038,6 @@ let scalarMultiplication p result scalar tempBuffer  =
   pointToDomain p result;
   let q = sub tempBuffer (size 0) (size 12) in 
   let buff = sub tempBuffer (size 12) (size 88) in 
-  montgomery_ladder q result scalarSize scalar buff;
+  montgomery_ladder q result scalar buff;
   norm q result buff
   

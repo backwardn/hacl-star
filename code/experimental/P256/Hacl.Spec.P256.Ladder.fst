@@ -48,34 +48,28 @@ let _ml_step k i p q =
       _ml_step0 p q 
     else _ml_step1 p q  
 
+
+val point_prime_to_coordinates: p: point_prime -> Tot (r: tuple3 nat nat nat {
+  let x2, y2, z2 = r in 
+  let x1, y1, z1 = felem_seq_as_nat (sub p 0 4), felem_seq_as_nat (sub p 4 4), felem_seq_as_nat (sub p 8 4) in
+  x1 == x2 /\ y1 == y2 /\ z1 == z2})
+
+let point_prime_to_coordinates p  = 
+   felem_seq_as_nat (sub p 0 4), felem_seq_as_nat (sub p 4 4), felem_seq_as_nat (sub p 8 4) 
+   
+
 val montgomery_ladder_step0: p: point_prime -> q: point_prime -> 
   Tot (r: tuple2 point_prime point_prime 
     {
       let r0, r1 = r in 
 
-      let x3_0 = felem_seq_as_nat (sub r0 0 4) in 
-      let y3_0 = felem_seq_as_nat (sub r0 4 4) in
-      let z3_0 = felem_seq_as_nat (sub r0 8 4) in 
-
-      let x3_1 = felem_seq_as_nat (sub r1 0 4) in 
-      let y3_1 = felem_seq_as_nat (sub r1 4 4) in 
-      let z3_1 = felem_seq_as_nat (sub r1 8 4) in 
+      let r0_coordinates = point_prime_to_coordinates r0 in 
+      let r1_coordinates = point_prime_to_coordinates r1 in 
+      let p = point_prime_to_coordinates p in 
+      let q = point_prime_to_coordinates q in 
     
-      let x1 = felem_seq_as_nat (sub p 0 4) in 
-      let y1 = felem_seq_as_nat (sub p 4 4) in 
-      let z1 = felem_seq_as_nat (sub p 8 4) in 
-      
-      let x2 = felem_seq_as_nat (sub q 0 4) in 
-      let y2 = felem_seq_as_nat (sub q 4 4) in 
-      let z2 = felem_seq_as_nat (sub q 8 4) in
-    
-      let pxD, pyD, pzD = fromDomainPoint (x1, y1, z1) in 
-      let qxD, qyD, qzD = fromDomainPoint (x2, y2, z2) in 
-      let x3D_0, y3D_0, z3D_0 = fromDomainPoint (x3_0, y3_0, z3_0) in
-      let x3D_1, y3D_1, z3D_1 = fromDomainPoint (x3_1, y3_1, z3_1) in 
-
-      let (x3N_0, y3N_0, z3N_0), (x3N_1, y3N_1, z3N_1) = _ml_step0 (pxD, pyD, pzD) (qxD, qyD, qzD) in 
-      x3N_0 == x3D_0 /\ y3N_0 == y3D_0 /\ z3N_0 == z3D_0 /\ x3N_1 == x3D_1 /\ y3N_1 == y3D_1 /\ z3N_1 == z3D_1 
+      let r0N, r1N = _ml_step0 (fromDomainPoint p) (fromDomainPoint q) in 
+      r0N == fromDomainPoint r0_coordinates /\ r1N == fromDomainPoint r1_coordinates
     } 
  )   
     
@@ -86,52 +80,23 @@ let montgomery_ladder_step0 r0 r1 =
   (r0, r1)
 
 
+#reset-options "--z3refresh --z3rlimit  100"
+
+
 val montgomery_ladder_step1_seq: p: point_prime -> q: point_prime -> 
   Tot (r: tuple2 point_prime point_prime 
     {
-      let r0, r1 = r in 
+      let r0, r1 = r in
 
-      let x3_0 = felem_seq_as_nat (sub r0 0 4) in 
-      let y3_0 = felem_seq_as_nat (sub r0 4 4) in
-      let z3_0 = felem_seq_as_nat (sub r0 8 4) in 
-
-      let x3_1 = felem_seq_as_nat (sub r1 0 4) in 
-      let y3_1 = felem_seq_as_nat (sub r1 4 4) in 
-      let z3_1 = felem_seq_as_nat (sub r1 8 4) in 
+      let r0_coordinates = point_prime_to_coordinates r0 in 
+      let r1_coordinates = point_prime_to_coordinates r1 in 
+      let p = point_prime_to_coordinates p in 
+      let q = point_prime_to_coordinates q in 
     
-      let x1 = felem_seq_as_nat (sub p 0 4) in 
-      let y1 = felem_seq_as_nat (sub p 4 4) in 
-      let z1 = felem_seq_as_nat (sub p 8 4) in 
-      
-      let x2 = felem_seq_as_nat (sub q 0 4) in 
-      let y2 = felem_seq_as_nat (sub q 4 4) in 
-      let z2 = felem_seq_as_nat (sub q 8 4) in
-    
-      let pxD, pyD, pzD = fromDomainPoint (x1, y1, z1) in 
-      let qxD, qyD, qzD = fromDomainPoint (x2, y2, z2) in 
-      let x3D_0, y3D_0, z3D_0 = fromDomainPoint (x3_0, y3_0, z3_0) in
-      let x3D_1, y3D_1, z3D_1 = fromDomainPoint (x3_1, y3_1, z3_1) in 
-
-      let r0N, r1N = _ml_step1 (pxD, pyD, pzD) (qxD, qyD, qzD) in 
-      let (x3N_0, y3N_0, z3N_0) = r0N in 
-      let (x3N_1, y3N_1, z3N_1) = r1N in 
-    
-      x3N_0 == x3D_0 /\  y3N_0 == y3D_0 /\  z3N_0 == z3D_0 /\ 
-      x3N_1 == x3D_1 /\  y3N_1 == y3D_1 /\  z3N_1 == z3D_1 
+      let r0N, r1N = _ml_step1 (fromDomainPoint p) (fromDomainPoint q) in 
+      r0N == fromDomainPoint r0_coordinates /\ r1N == fromDomainPoint r1_coordinates
     }
- )   
-
-
-(*R0 ← 0
-  R1 ← P
-  for i from m downto 0 do
-     if di = 0 then
-        R1 ← point_add(R0, R1)
-        R0 ← point_double(R0)
-     else
-        R0 ← point_add(R0, R1)
-        R1 ← point_double(R1)
-  return R0 *)
+ )    
 
 
 let montgomery_ladder_step1_seq r0 r1 = 
@@ -242,7 +207,6 @@ let cswap bit p1 p2 =
 
 
 
-
 #reset-options "--z3refresh --z3rlimit 100"
 
 val lemma_swaped_steps: p: point_prime -> q: point_prime -> 
@@ -271,8 +235,16 @@ let lemma_swaped_steps p q =
 
 
 val montgomery_ladder_step_swap: p: point_prime -> q: point_prime -> k: scalar -> i: nat {i < 256} -> 
-  Tot (r: tuple2 point_prime point_prime)
-   
+  Tot (r: tuple2 point_prime point_prime
+    { 
+       let r0, r1 = r in 
+       let r0From, r1From = fromDomainPoint r0, fromDomainPoint r1 in 
+       
+       let pBefore, qBefore = fromDomainPoint p, fromDomainPoint q in 
+       let r0Real, r1Real = montgomery_la
+    
+  }
+
 
 let montgomery_ladder_step_swap p q k i = 
   let bit = 255 - i in 
