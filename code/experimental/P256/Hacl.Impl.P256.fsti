@@ -146,7 +146,7 @@ val montgomery_ladder: p: point -> q: point ->
   (ensures fun h0 _ h1 -> True)
 
 val scalarMultiplication: p: point -> result: point -> 
-  scalarSize: size_t -> scalar: lbuffer uint8 scalarSize -> 
+  scalar: lbuffer uint8 (size 32) -> 
   tempBuffer: lbuffer uint64 (size 100) ->
   Stack unit
   (requires fun h -> live h p /\ live h result /\ live h tempBuffer)

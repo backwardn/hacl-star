@@ -793,23 +793,24 @@ let norm p resultPoint tempBuffer =
        point_x_as_nat h3 resultPoint == xN /\ point_y_as_nat h3 resultPoint == yN /\ point_z_as_nat h3 resultPoint == zN)
     (**)
 
+
+(* this piece of code is taken from Hacl.Curve25519 *)
 inline_for_extraction noextract 
 val scalar_bit:
-    s:lbuffer uint8 (size 32) 
+  s:lbuffer uint8 (size 32)
   -> n:size_t{v n < 256}
   -> Stack uint64
     (requires fun h0 -> live h0 s)
-    (ensures  fun h0 r h1 -> h0 == h1)
-
-
-
+    (ensures  fun h0 r h1 -> h0 == h1 /\ r == ith_bit (as_seq h0 s) (v n) /\ v r <= 1)
 
 let scalar_bit s n =
-  let h0 = ST.get () in
-  (*mod_mask_lemma ((LSeq.index (as_seq h0 s) (v n / 8)) >>. (n %. 8ul)) 1ul;*)
+ let h0 = ST.get () in
+  mod_mask_lemma ((Lib.Sequence.index (as_seq h0 s) (v n / 8)) >>. (n %. 8ul)) 1ul;
   assert_norm (1 = pow2 1 - 1);
-  (*uintv_extensionality (mod_mask #U8 1ul) (u8 1);*)
+  uintv_extensionality (mod_mask #U8 1ul) (u8 1);
   to_u64 ((s.(n /. 8ul) >>. (n %. 8ul)) &. u8 1)
+
+
 
 val lemma_modifies3: a: LowStar.Monotonic.Buffer.loc -> b: LowStar.Monotonic.Buffer.loc -> c: LowStar.Monotonic.Buffer.loc -> 
   Lemma (ensures ((a |+| b |+| c) == (c |+| b |+| a)))
@@ -928,14 +929,13 @@ let montgomery_ladder_step1 r0 r1 tempBuffer =
     assert(let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step1 (as_seq h0 r0) (as_seq h0 r1) in 
       Lib.Sequence.equal (as_seq h2 r0) pN /\ Lib.Sequence.equal (as_seq h2 r1) qN)
 
-
+ 
 
 
 inline_for_extraction noextract 
 val montgomery_ladder_step: p: point -> q: point ->tempBuffer: lbuffer uint64 (size 88) -> 
-  scalarSize: size_t -> 
-  scalar: lbuffer uint8 scalarSize -> 
-  i:size_t{v i < v scalarSize} -> 
+  scalar: lbuffer uint8 (size 32) -> 
+  i:size_t{v i < 256} -> 
   Stack unit
   (requires fun h -> live h p /\ live h q /\ live h tempBuffer /\ 
     LowStar.Monotonic.Buffer.all_disjoint [loc p; loc q; loc tempBuffer] /\
@@ -948,24 +948,26 @@ val montgomery_ladder_step: p: point -> q: point ->tempBuffer: lbuffer uint64 (s
     as_nat h (gsub q (size 4) (size 4)) < prime /\
     as_nat h (gsub q (size 8) (size 4)) < prime
   )
-  (ensures fun h0 _ h1 -> True)
+  (ensures fun h0 _ h1 -> modifies3 p q tempBuffer h0 h1)
 
 
-let montgomery_ladder_step r0 r1 tempBuffer scalarSize scalar i = 
-  let bit = scalarSize -. i -.1 in 
+let montgomery_ladder_step r0 r1 tempBuffer scalar i = 
+  admit();
+  let bit = (size 255) -. i in 
   let bit = scalar_bit scalar bit in 
   cswap bit r0 r1;
   montgomery_ladder_step1 r0 r1 tempBuffer;
-  cswap bit r0 r1
+  cswap bit r0 r1;
+  admit()
 
 
 let montgomery_ladder p q scalarSize scalar tempBuffer =  
   let inv h1 (i: nat {i <= v scalarSize}) = True in 
-  for 0ul scalarSize inv (fun i -> montgomery_ladder_step p q tempBuffer scalarSize scalar i)
+  for 0ul scalarSize inv (fun i -> montgomery_ladder_step p q tempBuffer scalar i)
 
 
-let scalarMultiplication p result scalarSize scalar tempBuffer  = 
-  let scalarSize = scalarSize *. 8 in 
+let scalarMultiplication p result scalar tempBuffer  = 
+  let scalarSize = 256ul in 
   pointToDomain p result;
   let q = sub tempBuffer (size 0) (size 12) in 
   let buff = sub tempBuffer (size 12) (size 88) in 

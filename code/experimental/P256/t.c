@@ -239,7 +239,7 @@ void Test0()
   basePoint[11] = 0uL; 
  
  
-  uint8_t * scalar0 = (uint8_t *) malloc (sizeof (uint8_t) * 1); 
+  uint8_t * scalar0 = (uint8_t *) malloc (sizeof (uint8_t) * 32); 
   scalar0[0] = 1; 
 
 
@@ -258,7 +258,7 @@ void Test0()
   expectedPoint[11] = 0; 
 
 
-  scalarMultiplication(basePoint, resultPoint, 1, scalar0, tempBuffer); 
+  scalarMultiplication(basePoint, resultPoint, scalar0, tempBuffer); 
   bool flag = true; 
   for (int i = 0; i< 8; i++) 
   { 
@@ -277,6 +277,7 @@ void Test0()
    print_uu_l(resultPoint, 12, false); 
   }
  }
+
 
 void Test1() 
  { 
@@ -299,7 +300,7 @@ void Test1()
   basePoint[11] = 0uL; 
  
  
-  uint8_t * scalar1 = (uint8_t *) malloc (sizeof (uint8_t) * 1); 
+  uint8_t * scalar1 = (uint8_t *) malloc (sizeof (uint8_t) * 32); 
   scalar1[0] = 2; 
 
 
@@ -318,7 +319,7 @@ void Test1()
   expectedPoint[11] = 0; 
 
 
-  scalarMultiplication(basePoint, resultPoint, 1, scalar1, tempBuffer); 
+  scalarMultiplication(basePoint, resultPoint,  scalar1, tempBuffer); 
   bool flag = true; 
   for (int i = 0; i< 8; i++) 
   { 
@@ -337,6 +338,7 @@ void Test1()
    print_uu_l(resultPoint, 12, false); 
   }
  }
+
 
 void Test2() 
  { 
@@ -359,7 +361,7 @@ void Test2()
   basePoint[11] = 0uL; 
  
  
-  uint8_t * scalar2 = (uint8_t *) malloc (sizeof (uint8_t) * 1); 
+  uint8_t * scalar2 = (uint8_t *) malloc (sizeof (uint8_t) * 32); 
   scalar2[0] = 3; 
 
 
@@ -378,7 +380,7 @@ void Test2()
   expectedPoint[11] = 0; 
 
 
-  scalarMultiplication(basePoint, resultPoint, 1, scalar2, tempBuffer); 
+  scalarMultiplication(basePoint, resultPoint, scalar2, tempBuffer); 
   bool flag = true; 
   for (int i = 0; i< 8; i++) 
   { 
@@ -419,7 +421,7 @@ void Test3()
   basePoint[11] = 0uL; 
  
  
-  uint8_t * scalar3 = (uint8_t *) malloc (sizeof (uint8_t) * 1); 
+  uint8_t * scalar3 = (uint8_t *) malloc (sizeof (uint8_t) * 32);
   scalar3[0] = 0x4; 
 
 
@@ -438,7 +440,7 @@ void Test3()
   expectedPoint[11] = 0; 
 
 
-  scalarMultiplication(basePoint, resultPoint, 1, scalar3, tempBuffer); 
+  scalarMultiplication(basePoint, resultPoint, scalar3, tempBuffer); 
   bool flag = true; 
   for (int i = 0; i< 8; i++) 
   { 
@@ -479,7 +481,7 @@ void Test4()
   basePoint[11] = 0uL; 
  
  
-  uint8_t * scalar4 = (uint8_t *) malloc (sizeof (uint8_t) * 1); 
+  uint8_t * scalar4 = (uint8_t *) malloc (sizeof (uint8_t) * 32); 
   scalar4[0] = 5; 
 
 
@@ -498,7 +500,7 @@ void Test4()
   expectedPoint[11] = 0; 
 
 
-  scalarMultiplication(basePoint, resultPoint, 1, scalar4, tempBuffer); 
+  scalarMultiplication(basePoint, resultPoint, scalar4, tempBuffer); 
   bool flag = true; 
   for (int i = 0; i< 8; i++) 
   { 
@@ -539,7 +541,7 @@ void Test5()
   basePoint[11] = 0uL; 
  
  
-  uint8_t * scalar5 = (uint8_t *) malloc (sizeof (uint8_t) * 1); 
+  uint8_t * scalar5 = (uint8_t *) malloc (sizeof (uint8_t) * 32); 
   scalar5[0] = 6; 
 
 
@@ -558,7 +560,7 @@ void Test5()
   expectedPoint[11] = 0; 
 
 
-  scalarMultiplication(basePoint, resultPoint, 1, scalar5, tempBuffer); 
+  scalarMultiplication(basePoint, resultPoint, scalar5, tempBuffer); 
   bool flag = true; 
   for (int i = 0; i< 8; i++) 
   { 
@@ -577,7 +579,7 @@ void Test5()
    print_uu_l(resultPoint, 12, false); 
   }
  }
-
+/*
 void Test6() 
  { 
   uint64_t* tempBuffer = (uint64_t *) malloc (sizeof (uint64_t) * 100);
@@ -4100,6 +4102,7 @@ void Test49()
    print_uu_l(resultPoint, 12, false); 
   }
  }
+*/
 
 void Test50() 
  { 
@@ -4172,7 +4175,7 @@ void Test50()
   expectedPoint[11] = 0; 
 
 
-  scalarMultiplication(basePoint, resultPoint, 32, scalar50, tempBuffer); 
+  scalarMultiplication(basePoint, resultPoint, scalar50, tempBuffer); 
   bool flag = true; 
   for (int i = 0; i< 8; i++) 
   { 
@@ -4263,7 +4266,7 @@ void Test51()
   expectedPoint[11] = 0; 
 
 
-  scalarMultiplication(basePoint, resultPoint, 32, scalar51, tempBuffer); 
+  scalarMultiplication(basePoint, resultPoint, scalar51, tempBuffer); 
   bool flag = true; 
   for (int i = 0; i< 8; i++) 
   { 
@@ -4284,7 +4287,7 @@ void Test51()
  }
 
 
-
+/*
 void Test52() 
  { 
   uint64_t* tempBuffer = (uint64_t *) malloc (sizeof (uint64_t) * 100);
@@ -4379,7 +4382,7 @@ void Test52()
  }
 
 
-
+*/
 
 
 int main()
@@ -4389,57 +4392,57 @@ int main()
 
 Test0();
 Test1();
-Test2();
-Test3();
-Test4();
-Test5();
-Test6();
-Test7();
-Test8();
-Test9();
-Test10();
-Test11();
-Test12();
-Test13();
-Test14();
-Test15();
-Test16();
-Test17();
-Test18();
-Test19();
-Test20();
-Test21();
-Test22();
-Test23();
-Test24();
-Test25();
-Test26();
-Test27();
-Test28();
-Test29();
-Test30();
-Test31();
-Test32();
-Test33();
-Test34();
-Test35();
-Test36();
-Test37();
-Test38();
-Test39();
-Test40();
-Test41();
-Test42();
-Test43();
-Test44();
-Test45();
-Test46();
-Test47();
-Test48();
-Test49();
+// Test2();
+// Test3();
+// Test4();
+// Test5();
+// Test6();
+// Test7();
+// Test8();
+// Test9();
+// Test10();
+// Test11();
+// Test12();
+// Test13();
+// Test14();
+// Test15();
+// Test16();
+// Test17();
+// Test18();
+// Test19();
+// Test20();
+// Test21();
+// Test22();
+// Test23();
+// Test24();
+// Test25();
+// Test26();
+// Test27();
+// Test28();
+// Test29();
+// Test30();
+// Test31();
+// Test32();
+// Test33();
+// Test34();
+// Test35();
+// Test36();
+// Test37();
+// Test38();
+// Test39();
+// Test40();
+// Test41();
+// Test42();
+// Test43();
+// Test44();
+// Test45();
+// Test46();
+// Test47();
+// Test48();
+// Test49();
 Test50();
 Test51();
-Test52();
+// Test52();
 
   POINT key,pub;
   SCALAR priv;
@@ -4459,7 +4462,7 @@ Test52();
   t1 = clock();
   a = cpucycles();
   for (int j = 0; j < ROUNDS; j++) {
-    scalarMultiplication(pub,key,32,priv,tempBuffer);
+    scalarMultiplication(pub,key,priv,tempBuffer);
     res ^= key[0] ^ key[15];
   }
   b = cpucycles();
