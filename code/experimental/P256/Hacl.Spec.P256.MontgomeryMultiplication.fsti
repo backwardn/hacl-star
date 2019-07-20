@@ -149,15 +149,3 @@ val exponent: a: felem ->result: felem -> tempBuffer: lbuffer uint64 (size 20) -
   disjoint a tempBuffer /\ as_nat h a < prime)
   (ensures fun h0 _ h1 -> modifies2 result tempBuffer h0 h1 /\ (let k = fromDomain_ (as_nat h0 a) in 
     as_nat h1 result =  toDomain_ ((pow k (prime-2)) % prime)))
-
-
-[@ CInline]
-val cswap: bit:uint64{v bit <= 1} -> p1:point -> p2:point
-  -> Stack unit
-    (requires fun h ->
-      live h p1 /\ live h p2 /\
-      (disjoint p1 p2 \/ p1 == p2))
-    (ensures  fun h0 _ h1 ->
-      modifies (loc p1 |+| loc p2) h0 h1 /\
-      (v bit == 1 ==> as_seq h1 p1 == as_seq h0 p2 /\ as_seq h1 p2 == as_seq h0 p1) /\
-      (v bit == 0 ==> as_seq h1 p1 == as_seq h0 p1 /\ as_seq h1 p2 == as_seq h0 p2))

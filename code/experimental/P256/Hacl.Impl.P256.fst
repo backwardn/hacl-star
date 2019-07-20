@@ -908,7 +908,7 @@ val montgomery_ladder_step1: p: point -> q: point ->tempBuffer: lbuffer uint64 (
     (
       let p1 = as_seq h1 p in 
       let q1 = as_seq h1 q in 
-      let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step1 (as_seq h0 p) (as_seq h0 q) in 
+      let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step1_seq (as_seq h0 p) (as_seq h0 q) in 
       pN == p1 /\ qN == q1
   ) 
   )
@@ -926,19 +926,20 @@ let montgomery_ladder_step1 r0 r1 tempBuffer =
     lemma_modifies_3_two_parts tempBuffer r1 r0 h0 h1 h2;
 
     assert(modifies3 r0 r1 tempBuffer h0 h2);
-    assert(let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step1 (as_seq h0 r0) (as_seq h0 r1) in 
+    assert(let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step1_seq (as_seq h0 r0) (as_seq h0 r1) in 
       Lib.Sequence.equal (as_seq h2 r0) pN /\ Lib.Sequence.equal (as_seq h2 r1) qN)
 
  
 
+#reset-options "--z3refresh --z3rlimit 100" 
 
 inline_for_extraction noextract 
 val montgomery_ladder_step: p: point -> q: point ->tempBuffer: lbuffer uint64 (size 88) -> 
   scalar: lbuffer uint8 (size 32) -> 
   i:size_t{v i < 256} -> 
   Stack unit
-  (requires fun h -> live h p /\ live h q /\ live h tempBuffer /\ 
-    LowStar.Monotonic.Buffer.all_disjoint [loc p; loc q; loc tempBuffer] /\
+  (requires fun h -> live h p /\ live h q /\ live h tempBuffer /\ live h scalar /\
+    LowStar.Monotonic.Buffer.all_disjoint [loc p; loc q; loc tempBuffer; loc scalar] /\
      
     as_nat h (gsub p (size 0) (size 4)) < prime /\ 
     as_nat h (gsub p (size 4) (size 4)) < prime /\
@@ -948,17 +949,62 @@ val montgomery_ladder_step: p: point -> q: point ->tempBuffer: lbuffer uint64 (s
     as_nat h (gsub q (size 4) (size 4)) < prime /\
     as_nat h (gsub q (size 8) (size 4)) < prime
   )
-  (ensures fun h0 _ h1 -> modifies3 p q tempBuffer h0 h1)
+  (ensures fun h0 _ h1 -> modifies3 p q tempBuffer h0 h1 /\ 
+    (
+      let p1 = as_seq h1 p in 
+      let q1 = as_seq h1 q in 
+      let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step_swap (as_seq h0 p) (as_seq h0 q) (as_seq h0 scalar) (uint_v i) in 
+      pN == p1 /\ qN == q1
+    )
+  )
+
+val lemma_step: i: size_t {uint_v i < 256} -> Lemma  (uint_v ((size 255) -. i) == 255 - (uint_v i))
+let lemma_step i = ()
+
+
+val lemma_to_point_buffer: h: mem -> b: lbuffer uint64 (size 12) {
+    as_nat h (gsub b (size 0) (size 4)) < prime /\ 
+    as_nat h (gsub b (size 4) (size 4)) < prime /\
+    as_nat h (gsub b (size 8) (size 4)) < prime} -> 
+    Lemma (ensures (let b_seq = as_seq h b in 
+      let x = Lib.Sequence.sub b_seq 0 4 in 
+      let y = Lib.Sequence.sub b_seq 4 4 in 
+      let z = Lib.Sequence.sub b_seq 8 4 in 
+      felem_seq_as_nat x < prime /\ felem_seq_as_nat y < prime /\ felem_seq_as_nat z < prime))
+
+let lemma_to_point_buffer h b = ()
+
 
 
 let montgomery_ladder_step r0 r1 tempBuffer scalar i = 
-  admit();
-  let bit = (size 255) -. i in 
-  let bit = scalar_bit scalar bit in 
-  cswap bit r0 r1;
-  montgomery_ladder_step1 r0 r1 tempBuffer;
-  cswap bit r0 r1;
-  admit()
+    let h0 = ST.get() in 
+    
+  let bit0 = (size 255) -. i in 
+  let bit = scalar_bit scalar bit0 in 
+
+
+  cswap bit r0 r1; 
+    let h1 = ST.get () in 
+  montgomery_ladder_step1 r0 r1 tempBuffer; 
+   let h2 = ST.get() in 
+  cswap bit r0 r1; 
+  let h3 = ST.get() in 
+
+  lemma_to_point_buffer h0 r0;
+  lemma_to_point_buffer h0 r1;
+  lemma_step i;
+
+
+  assert(let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step_swap (as_seq h0 r0) (as_seq h0 r1) (as_seq h0 scalar) (uint_v i) in Lib.Sequence.equal pN (as_seq h3 r0));
+  assert(let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step_swap (as_seq h0 r0) (as_seq h0 r1) (as_seq h0 scalar) (uint_v i) in Lib.Sequence.equal qN (as_seq h3 r1));
+  modifies2_is_modifies3 r0 r1 tempBuffer h0 h1;
+  modifies2_is_modifies3 r0 r1 tempBuffer h2 h3;
+  assert(modifies3 r0 r1 tempBuffer h0 h1);
+  assert(modifies3 r0 r1 tempBuffer h1 h2);
+  assert(modifies3 r0 r1 tempBuffer h2 h3);
+  assert(modifies3 r0 r1 tempBuffer h0 h2);
+  assert(modifies3 r0 r1 tempBuffer h0 h3)
+
 
 
 let montgomery_ladder p q scalarSize scalar tempBuffer =  
