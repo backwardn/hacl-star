@@ -593,7 +593,6 @@ let lemma_add_same_value_is_by_eight a =
   lemma_eq_funct r eight
   
 
-
 let mm_byMinusThree_seq a = 
     let a0 = index a 0 in 
     let a1 = index a 1 in 
@@ -613,6 +612,19 @@ let mm_byMinusThree_seq a =
     lemmaFromDomainToDomain (as_nat4 r_tuple);
     inDomain_mod_is_not_mod (-3 * fromDomain_ (as_nat4 a_tuple));
     r
+
+
+let lemma_add_same_value_is_by_minus_three a zero = 
+  let three = mm_byThree_seq a in 
+  let a_ = felem_seq_as_nat a in 
+    assert(felem_seq_as_nat three = toDomain_ (3 * fromDomain_ a_ % prime));
+  let minusThree = felem_sub_seq zero three in 
+    assert_norm (fromDomain_ 0 == 0);
+    assert(felem_seq_as_nat minusThree = toDomain_ (( - (3 * fromDomain_ a_ % prime)) % prime));
+  let r = mm_byMinusThree_seq a in
+    lemma_mod_sub_distr 0 (3 * fromDomain_ a_) prime;
+    lemma_eq_funct minusThree r
+  
 
 val lemmaDistributivityInDomain: a: int -> b: int -> Lemma (toDomain_ (a * (b % prime) % prime) = toDomain_ (a * b % prime))
   [SMTPat (toDomain_ (a * (b % prime) % prime))]

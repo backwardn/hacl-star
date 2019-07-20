@@ -134,6 +134,14 @@ noextract
 val mm_byMinusThree_seq: a: felem_seq {felem_seq_as_nat a < prime} -> Tot (r: felem_seq {felem_seq_as_nat r < prime /\
   felem_seq_as_nat r = toDomain_ ((-3) * fromDomain_ (felem_seq_as_nat a) % prime)})
 
+
+val lemma_add_same_value_is_by_minus_three: a: felem_seq{felem_seq_as_nat a < prime} -> zero: felem_seq{felem_seq_as_nat zero = 0} ->
+  Lemma ( 
+      let three = mm_byThree_seq a in 
+      let minusThree = felem_sub_seq zero three in 
+      minusThree == mm_byMinusThree_seq a)
+
+
 val lemmaEraseToDomainFromDomain: z: nat-> Lemma (toDomain_ (fromDomain_ (toDomain_ (z * z % prime)) * z % prime) == toDomain_ (z * z * z % prime))
 
 val exponent: a: felem ->result: felem -> tempBuffer: lbuffer uint64 (size 20) ->  Stack unit

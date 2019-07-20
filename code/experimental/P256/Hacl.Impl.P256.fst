@@ -162,12 +162,14 @@ val multByMinusThree: a: felem -> result: felem -> Stack unit
   (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result < prime /\ as_seq h1 result == mm_byMinusThree_seq (as_seq h0 a))
 
 let multByMinusThree a result  = 
+  let h0 = ST.get() in 
     push_frame();
     multByThree a result;
     let zeros = create (size 4) (u64 0) in 
+      let h1 = ST.get() in 
     p256_sub zeros result result;
-  pop_frame()  ;
-  admit()
+  pop_frame();
+  lemma_add_same_value_is_by_minus_three (as_seq h0 a) (as_seq h1 zeros)
 
 
 val isZero_uint64:  f: felem -> Stack uint64

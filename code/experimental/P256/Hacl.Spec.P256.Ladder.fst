@@ -29,9 +29,9 @@ let _ml_step0 r0 r1 =
 val _ml_step1: p: point_nat -> q: point_nat -> tuple2 point_nat point_nat
 
 let _ml_step1 r0 r1 = 
-  let r3 = _point_double r0 in 
   let r1 = _point_add r0 r1 in 
-  (r3, r1)
+  let r0 = _point_double r0 in 
+  (r0, r1)
 
 (*changed to any size *)
 val _ml_step: k: scalar-> i: nat{i < 256} -> p: point_nat -> q: point_nat -> Tot (r: tuple2 point_nat point_nat)
@@ -130,7 +130,7 @@ val montgomery_ladder_step1: p: point_prime -> q: point_prime ->
 
 
 let montgomery_ladder_step1 r0 r1 = 
-  let r1 = point_add_seq r1 r0 in 
+  let r1 = point_add_seq r0 r1 in 
   let r0 = point_double_seq r0 in  
   (r0, r1)
 
@@ -147,3 +147,33 @@ let montgomery_ladder_step p q k i =
   else   
     montgomery_ladder_step1 p q
     
+val swap: p: point_prime -> q: point_prime -> Tot (r: tuple2 point_prime point_prime {let pNew, qNew = r in 
+  pNew == q /\ qNew == p})
+
+let swap p q = (q, p)
+
+val conditional_swap: i: uint64 -> p: point_prime -> q: point_prime -> Tot (r: tuple2 point_prime point_prime
+  {
+    let pNew, qNew = r in 
+    if uint_v i = 0 then pNew == p /\ qNew == q
+    else
+      pNew == q /\ qNew == p
+ }
+)
+
+let conditional_swap i p q = 
+  if uint_v i = 0 then 
+    (p, q)
+  else
+    (q, p)
+
+val montgomery_ladder_step_swap: p: point_prime -> q: point_prime -> k: scalar -> i: nat {i < 256} -> 
+  Tot (tuple2 point_prime point_prime)
+
+let montgomery_ladder_step_swap p q k i = 
+  let bit = ith_bit k i in 
+  let p, q =  conditional_swap bit p q in 
+  let p, q = montgomery_ladder_step1 p q in 
+  conditional_swap bit p q
+    
+  
