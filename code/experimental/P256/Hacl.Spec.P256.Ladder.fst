@@ -22,9 +22,9 @@ let ith_bit (k:scalar) (i:nat{i < 256}) : uint64 =
 val _ml_step0: p: point_nat -> q: point_nat -> tuple2 point_nat point_nat
 
 let _ml_step0 r0 r1 = 
-  let r0 = _point_add r0 r1 in
+  let r0 = _point_add r1 r0 in
   let r1 = _point_double r1 in 
-  (r0, r1)
+  (r0, r1) 
 
 val _ml_step1: p: point_nat -> q: point_nat -> tuple2 point_nat point_nat
 
@@ -76,7 +76,7 @@ val montgomery_ladder_step0: p: point_prime -> q: point_prime ->
     
 
 let montgomery_ladder_step0 r0 r1 = 
-  let r0 = point_add_seq r0 r1 in 
+  let r0 = point_add_seq r1 r0 in 
   let r1 = point_double_seq r1 in 
   (r0, r1)
 
@@ -135,31 +135,23 @@ let montgomery_ladder_step1 r0 r1 =
   (r0, r1)
 
 
-val montgomery_ladder_step: p: point_prime -> q: point_prime -> 
-  k: scalar -> i: nat {i < 256} -> Tot (tuple2 point_prime point_prime)
-
-
-let montgomery_ladder_step p q k i = 
-  let bit = ith_bit k i in 
-  let isZeroBit = eq #U64 bit (u64 0) in 
-  if isZeroBit then 
-   montgomery_ladder_step0 p q
-  else   
-    montgomery_ladder_step1 p q
-    
 val swap: p: point_prime -> q: point_prime -> Tot (r: tuple2 point_prime point_prime {let pNew, qNew = r in 
   pNew == q /\ qNew == p})
 
 let swap p q = (q, p)
+
 
 val conditional_swap: i: uint64 -> p: point_prime -> q: point_prime -> Tot (r: tuple2 point_prime point_prime
   {
     let pNew, qNew = r in 
     if uint_v i = 0 then pNew == p /\ qNew == q
     else
-      pNew == q /\ qNew == p
+      let p1, q1 = swap p q in 
+      p1 == pNew /\ q1 == qNew
  }
 )
+
+#reset-options "--z3refresh --z3rlimit  100"
 
 let conditional_swap i p q = 
   if uint_v i = 0 then 
@@ -167,13 +159,43 @@ let conditional_swap i p q =
   else
     (q, p)
 
+#reset-options "--z3refresh --z3rlimit 100"
+
+val lemma_swaped_steps: p: point_prime -> q: point_prime -> 
+  Lemma (
+    let (afterSwapP, afterSwapQ) = swap p q in 
+    let p1, q1 = montgomery_ladder_step1 afterSwapP afterSwapQ in 
+    let p2, q2 = swap p1 q1 in 
+    let r0, r1 = montgomery_ladder_step0 p q in 
+    p2 == r0 /\ q2 == r1)
+
+let lemma_swaped_steps p q = 
+  let p0, q0 = montgomery_ladder_step0 p q in 
+    assert(p0 == point_add_seq q p);
+    assert(q0 == point_double_seq q);
+  
+  let afterSwapP, afterSwapQ = swap p q in 
+    assert(afterSwapP == q /\ afterSwapQ == p);
+  let (p1, q1) = montgomery_ladder_step1 afterSwapP afterSwapQ in 
+    assert(q1 == point_add_seq q p);
+    assert(p1 == point_double_seq q);
+  let (p2, q2) = swap p1 q1 in 
+    assert(p2 == point_add_seq q p);
+    assert(q2 == point_double_seq q);
+    assert(p2 == p0);
+    assert(q2 == q0)
+
+
 val montgomery_ladder_step_swap: p: point_prime -> q: point_prime -> k: scalar -> i: nat {i < 256} -> 
-  Tot (tuple2 point_prime point_prime)
+  Tot (r: tuple2 point_prime point_prime)
+   
 
 let montgomery_ladder_step_swap p q k i = 
   let bit = ith_bit k i in 
-  let p, q =  conditional_swap bit p q in 
-  let p, q = montgomery_ladder_step1 p q in 
-  conditional_swap bit p q
+  let p0, q0 = conditional_swap bit p q in 
+  let p1, q1 = montgomery_ladder_step1 p0 q0 in 
+  let p2, q2 = conditional_swap bit p1 q1 in
+   (p2, q2)  
+ 
     
   
