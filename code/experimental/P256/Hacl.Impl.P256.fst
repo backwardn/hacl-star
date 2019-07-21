@@ -890,7 +890,7 @@ val lemma_modifies_3_two_parts:
 let lemma_modifies_3_two_parts #a0 #a1 #a2 a b c h0 h1 h2 = ()
 
 
-inline_for_extraction noextract 
+inline_for_extraction noextract  
 val montgomery_ladder_step1: p: point -> q: point ->tempBuffer: lbuffer uint64 (size 88) -> Stack unit
   (requires fun h -> live h p /\ live h q /\ live h tempBuffer /\ 
     LowStar.Monotonic.Buffer.all_disjoint [loc p; loc q; loc tempBuffer] /\
@@ -917,16 +917,16 @@ val montgomery_ladder_step1: p: point -> q: point ->tempBuffer: lbuffer uint64 (
 
 let montgomery_ladder_step1 r0 r1 tempBuffer = 
     let h0 = ST.get() in 
-  point_add r1 r0 r1 tempBuffer;
+  point_add r0 r1 r1 tempBuffer;
     let h1 = ST.get() in 
   point_double r0 r0 tempBuffer; 
     let h2 = ST.get() in 
-    modifies2_is_modifies3 tempBuffer r1 r0 h0 h1; 
-    modifies2_is_modifies3 tempBuffer r0 r1 h1 h2;
-    lemma_modifies_3_two_parts tempBuffer r1 r0 h0 h1 h2;
-
-    assert(modifies3 r0 r1 tempBuffer h0 h2);
-    assert(let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step1_seq (as_seq h0 r0) (as_seq h0 r1) in 
+    
+  modifies2_is_modifies3 tempBuffer r1 r0 h0 h1; 
+  modifies2_is_modifies3 tempBuffer r0 r1 h1 h2;
+  lemma_modifies_3_two_parts tempBuffer r1 r0 h0 h1 h2;
+  assert(modifies3 r0 r1 tempBuffer h0 h2);
+  assert(let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step1_seq (as_seq h0 r0) (as_seq h0 r1) in 
       Lib.Sequence.equal (as_seq h2 r0) pN /\ Lib.Sequence.equal (as_seq h2 r1) qN)
 
 
@@ -1006,7 +1006,6 @@ let montgomery_ladder_step r0 r1 tempBuffer scalar i =
   let bit0 = (size 255) -. i in 
   let bit = scalar_bit scalar bit0 in 
 
-
   cswap bit r0 r1; 
     let h1 = ST.get () in 
   montgomery_ladder_step1 r0 r1 tempBuffer; 
@@ -1019,6 +1018,7 @@ let montgomery_ladder_step r0 r1 tempBuffer scalar i =
   lemma_step i;
 
   assert(let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step_swap (as_seq h0 r0) (as_seq h0 r1) (as_seq h0 scalar) (uint_v i) in Lib.Sequence.equal pN (as_seq h3 r0));
+
   assert(
     let x = Lib.Sequence.sub (as_seq h3 r0) 0 4 in 
     let y = Lib.Sequence.sub (as_seq h3 r0) 4 4 in
@@ -1027,6 +1027,7 @@ let montgomery_ladder_step r0 r1 tempBuffer scalar i =
  );
 
    lemma_test h3 r0;
+   
    assert(let pN, qN = 
      Hacl.Spec.P256.Ladder.montgomery_ladder_step_swap (as_seq h0 r0) (as_seq h0 r1) (as_seq h0 scalar) (uint_v i) in Lib.Sequence.equal qN (as_seq h3 r1));
    assert(
@@ -1037,6 +1038,17 @@ let montgomery_ladder_step r0 r1 tempBuffer scalar i =
  );
 
    lemma_test h3 r1;
+
+   assert(
+      as_nat h3 (gsub r0 (size 0) (size 4)) < prime /\ 
+      as_nat h3 (gsub r0 (size 4) (size 4)) < prime /\
+      as_nat h3 (gsub r0 (size 8) (size 4)) < prime /\
+	     
+      as_nat h3 (gsub r1 (size 0) (size 4)) < prime /\  
+      as_nat h3 (gsub r1 (size 4) (size 4)) < prime /\
+      as_nat h3 (gsub r1 (size 8) (size 4)) < prime);
+
+
   modifies2_is_modifies3 r0 r1 tempBuffer h0 h1;
   modifies2_is_modifies3 r0 r1 tempBuffer h2 h3;
   assert(modifies3 r0 r1 tempBuffer h0 h1);
@@ -1059,13 +1071,45 @@ val montgomery_ladder: p: point -> q: point ->
     as_nat h (gsub q (size 0) (size 4)) < prime /\  
     as_nat h (gsub q (size 4) (size 4)) < prime /\
     as_nat h (gsub q (size 8) (size 4)) < prime )
-  (ensures fun h0 _ h1 -> modifies3 p q tempBuffer h0 h1)
+  (ensures fun h0 _ h1 -> modifies3 p q tempBuffer h0 h1 /\
+    (
+      as_nat h1 (gsub p (size 0) (size 4)) < prime /\ 
+      as_nat h1 (gsub p (size 4) (size 4)) < prime /\
+      as_nat h1 (gsub p (size 8) (size 4)) < prime /\
+	
+      as_nat h1 (gsub q (size 0) (size 4)) < prime /\  
+      as_nat h1 (gsub q (size 4) (size 4)) < prime /\
+      as_nat h1 (gsub q (size 8) (size 4)) < prime /\
+
+
+      (
+	let p1 = fromDomainPoint(point_prime_to_coordinates (as_seq h1 p)) in 
+	let q1 = fromDomainPoint(point_prime_to_coordinates (as_seq h1 q)) in 
+	let rN, qN = montgomery_ladder_spec (as_seq h0 scalar) 
+	  (
+	    fromDomainPoint(point_prime_to_coordinates (as_seq h0 p)),  
+	    fromDomainPoint(point_prime_to_coordinates (as_seq h0 q))
+	  ) in 
+	rN == p1 /\ qN == q1
+      )
+   )
+ )
 
 let montgomery_ladder p q scalar tempBuffer =  
   let h0 = ST.get() in 
 
   modifies0_is_modifies3 p q tempBuffer h0 h0;
+
+  [@inline_let]
+  let spec_ml h0 = _ml_step (as_seq h0 scalar) in 
+
+  [@inline_let] 
+  let acc (h:mem) : GTot (tuple2 point_nat point_nat) = 
+  (fromDomainPoint(point_prime_to_coordinates (as_seq h p)), fromDomainPoint(point_prime_to_coordinates (as_seq h q)))  in 
   
+  Lib.LoopCombinators.eq_repeati0 256 (spec_ml h0) (acc h0);
+
+  [@inline_let]
   let inv h (i: nat {i <= 256}) = 
     as_nat h (gsub p (size 0) (size 4)) < prime /\ 
     as_nat h (gsub p (size 4) (size 4)) < prime /\
@@ -1074,16 +1118,38 @@ let montgomery_ladder p q scalar tempBuffer =
     as_nat h (gsub q (size 0) (size 4)) < prime /\  
     as_nat h (gsub q (size 4) (size 4)) < prime /\
     as_nat h (gsub q (size 8) (size 4)) < prime /\
-    modifies3 p q tempBuffer h0 h
+    modifies3 p q tempBuffer h0 h   /\
+    acc h == Lib.LoopCombinators.repeati i (spec_ml h0) (acc h0)
+
     in 
+
   for 0ul 256ul inv 
     (fun i -> let h2 = ST.get() in
       assert(modifies3 p q tempBuffer h0 h2);
-      montgomery_ladder_step p q tempBuffer scalar i; 
+      montgomery_ladder_step p q tempBuffer scalar i;  
       let h3 = ST.get() in 
       assert(modifies3 p q tempBuffer h2 h3);
-      assert(modifies3 p q tempBuffer h0 h3)
-      )
+      assert(modifies3 p q tempBuffer h0 h3);
+
+      assert(
+	let p1 = as_seq h3 p in 
+	let q1 = as_seq h3 q in 
+        let pN, qN = Hacl.Spec.P256.Ladder.montgomery_ladder_step_swap 
+	(as_seq h2 p) (as_seq h2 q) (as_seq h2 scalar) (uint_v i) in 
+	pN == p1 /\ qN == q1);
+
+       assert(acc h3 == _ml_step (as_seq h2 scalar) (uint_v i) (acc h2));
+       Lib.LoopCombinators.unfold_repeati 256 (spec_ml h0) (acc h0) (uint_v i)
+
+ )
+
+
+  
+  
+
+      
+  
+
 
 
 let scalarMultiplication p result scalar tempBuffer  = 

@@ -880,8 +880,7 @@ Hacl_Spec_P256_MontgomeryMultiplication_exponent(
   memcpy(result, buffer_result1, (uint32_t)4U * sizeof buffer_result1[0U]);
 }
 
-static void
-Hacl_Spec_P256_MontgomeryMultiplication_cswap(uint64_t bit, uint64_t *p1, uint64_t *p2)
+static void Hacl_Spec_P256_Ladder_cswap(uint64_t bit, uint64_t *p1, uint64_t *p2)
 {
   uint64_t mask = (uint64_t)0U - bit;
   for (uint32_t i = (uint32_t)0U; i < (uint32_t)12U; i = i + (uint32_t)1U)
@@ -2149,33 +2148,25 @@ void norm(uint64_t *p, uint64_t *resultPoint, uint64_t *tempBuffer)
   resultZ[3U] = (uint64_t)0U;
 }
 
-void
-montgomery_ladder(
-  uint64_t *p,
-  uint64_t *q,
-  uint32_t scalarSize,
-  uint8_t *scalar,
-  uint64_t *tempBuffer
-)
+static void montgomery_ladder(uint64_t *p, uint64_t *q, uint8_t *scalar, uint64_t *tempBuffer)
 {
-  for (uint32_t i = (uint32_t)0U; i < scalarSize; i = i + (uint32_t)1U)
+  for (uint32_t i = (uint32_t)0U; i < (uint32_t)256U; i = i + (uint32_t)1U)
   {
-    uint32_t bit = (uint32_t)255U - i;
-    uint64_t bit1 = (uint64_t)(scalar[bit / (uint32_t)8U] >> bit % (uint32_t)8U & (uint8_t)1U);
-    Hacl_Spec_P256_MontgomeryMultiplication_cswap(bit1, p, q);
-    point_add(q, p, q, tempBuffer);
+    uint32_t bit0 = (uint32_t)255U - i;
+    uint64_t bit = (uint64_t)(scalar[bit0 / (uint32_t)8U] >> bit0 % (uint32_t)8U & (uint8_t)1U);
+    Hacl_Spec_P256_Ladder_cswap(bit, p, q);
+    point_add(p, q, q, tempBuffer);
     point_double(p, p, tempBuffer);
-    Hacl_Spec_P256_MontgomeryMultiplication_cswap(bit1, p, q);
+    Hacl_Spec_P256_Ladder_cswap(bit, p, q);
   }
 }
 
 void scalarMultiplication(uint64_t *p, uint64_t *result, uint8_t *scalar, uint64_t *tempBuffer)
 {
-  uint32_t scalarSize = (uint32_t)256U;
   pointToDomain(p, result);
   uint64_t *q = tempBuffer;
   uint64_t *buff = tempBuffer + (uint32_t)12U;
-  montgomery_ladder(q, result, scalarSize, scalar, buff);
+  montgomery_ladder(q, result, scalar, buff);
   norm(q, result, buff);
 }
 

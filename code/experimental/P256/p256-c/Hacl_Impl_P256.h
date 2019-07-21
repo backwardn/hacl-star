@@ -25,15 +25,6 @@ void point_add(uint64_t *p, uint64_t *q, uint64_t *result, uint64_t *tempBuffer)
 void norm(uint64_t *p, uint64_t *resultPoint, uint64_t *tempBuffer);
 
 void
-montgomery_ladder(
-  uint64_t *p,
-  uint64_t *q,
-  uint32_t scalarSize,
-  uint8_t *scalar,
-  uint64_t *tempBuffer
-);
-
-void
 scalarMultiplication(uint64_t *p, uint64_t *result, uint8_t *scalar, uint64_t *tempBuffer);
 
 #define __Hacl_Impl_P256_H_DEFINED

@@ -39,9 +39,9 @@ let _ml_step1 r0 r1 =
   (r0, r1)
 
 
-val _ml_step: k: scalar-> i: nat{i < 256} -> p: point_nat -> q: point_nat -> Tot (r: tuple2 point_nat point_nat)
+val _ml_step: k: scalar->  i: nat{i < 256} ->  (tuple2 point_nat point_nat) -> Tot (r: tuple2 point_nat point_nat)
 
-let _ml_step k i p q = 
+let _ml_step k i (p, q) = 
   let bit = 255 - i in 
   let bit = ith_bit k bit in 
   let open Lib.RawIntTypes in 
@@ -50,12 +50,18 @@ let _ml_step k i p q =
   else _ml_step0 p q  
 
 
-val point_prime_to_coordinates: p: point_prime -> Tot (r: tuple3 nat nat nat {
+val montgomery_ladder_spec: k: scalar -> tuple2 point_nat point_nat -> Tot (tuple2 point_nat point_nat)
+
+let montgomery_ladder_spec k (p, q) = 
+  Lib.LoopCombinators.repeati 256  (_ml_step k) (p, q)
+
+
+val point_prime_to_coordinates: p: point_seq -> Tot (r: tuple3 nat nat nat {
   let x2, y2, z2 = r in 
   let x1, y1, z1 = felem_seq_as_nat (sub p 0 4), felem_seq_as_nat (sub p 4 4), felem_seq_as_nat (sub p 8 4) in
   x1 == x2 /\ y1 == y2 /\ z1 == z2})
 
-let point_prime_to_coordinates p  = 
+let point_prime_to_coordinates p  =  
    felem_seq_as_nat (sub p 0 4), felem_seq_as_nat (sub p 4 4), felem_seq_as_nat (sub p 8 4) 
    
 
@@ -244,7 +250,7 @@ val montgomery_ladder_step_swap: p: point_prime -> q: point_prime -> k: scalar -
     let p = fromDomainPoint(point_prime_to_coordinates p) in 
     let q = fromDomainPoint(point_prime_to_coordinates q) in 
 
-    let r0N, r1N = _ml_step k i p q in 
+    let r0N, r1N = _ml_step k i (p, q) in 
     r0N == r0_coordinates /\ r1N ==  r1_coordinates
   }
 )
@@ -295,7 +301,7 @@ let montgomery_ladder_step_swap p q k i =
     let p2D = fromDomainPoint (point_prime_to_coordinates p2) in 
     let q2D = fromDomainPoint (point_prime_to_coordinates q2) in 
     
-    let rf, qf = _ml_step k i pD qD in 
+    let rf, qf = _ml_step k i (pD, qD) in 
 
     let r0Step1, r1Step1 = _ml_step1 pD qD in 
     let r0Step0, r1Step0 = _ml_step0 pD qD  in 
@@ -313,7 +319,7 @@ let montgomery_ladder_step_swap p q k i =
     let p2D = fromDomainPoint (point_prime_to_coordinates p2) in 
     let q2D = fromDomainPoint (point_prime_to_coordinates q2) in 
     
-    let rf, qf = _ml_step k i pD qD in 
+    let rf, qf = _ml_step k i (pD, qD) in 
 
     let r0Step1, r1Step1 = _ml_step1 pD qD in 
     let r0Step0, r1Step0 = _ml_step0 pD qD  in 
@@ -328,3 +334,5 @@ let montgomery_ladder_step_swap p q k i =
  
     
   
+
+
