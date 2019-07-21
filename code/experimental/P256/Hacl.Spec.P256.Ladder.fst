@@ -38,15 +38,16 @@ let _ml_step1 r0 r1 =
   let r0 = _point_double r0 in 
   (r0, r1)
 
-(*changed to any size *)
+
 val _ml_step: k: scalar-> i: nat{i < 256} -> p: point_nat -> q: point_nat -> Tot (r: tuple2 point_nat point_nat)
 
 let _ml_step k i p q = 
-    let bit = ith_bit k i in 
-    let isZeroBit = eq #U64 bit (u64 0) in 
-    if isZeroBit then  
-      _ml_step0 p q 
-    else _ml_step1 p q  
+  let bit = 255 - i in 
+  let bit = ith_bit k bit in 
+  let open Lib.RawIntTypes in 
+  if uint_to_nat bit = 0 then 
+      _ml_step1 p q 
+  else _ml_step0 p q  
 
 
 val point_prime_to_coordinates: p: point_prime -> Tot (r: tuple3 nat nat nat {
@@ -235,15 +236,19 @@ let lemma_swaped_steps p q =
 
 
 val montgomery_ladder_step_swap: p: point_prime -> q: point_prime -> k: scalar -> i: nat {i < 256} -> 
-  Tot (r: tuple2 point_prime point_prime
-    { 
-       let r0, r1 = r in 
-       let r0From, r1From = fromDomainPoint r0, fromDomainPoint r1 in 
-       
-       let pBefore, qBefore = fromDomainPoint p, fromDomainPoint q in 
-       let r0Real, r1Real = montgomery_la
-    
+  Tot (r: tuple2 point_prime point_prime 
+  {
+    let r0, r1 = r in 
+    let r0_coordinates = fromDomainPoint(point_prime_to_coordinates r0) in 
+    let r1_coordinates = fromDomainPoint(point_prime_to_coordinates r1) in 
+    let p = fromDomainPoint(point_prime_to_coordinates p) in 
+    let q = fromDomainPoint(point_prime_to_coordinates q) in 
+
+    let r0N, r1N = _ml_step k i p q in 
+    r0N == r0_coordinates /\ r1N ==  r1_coordinates
   }
+)
+    
 
 
 let montgomery_ladder_step_swap p q k i = 
@@ -252,6 +257,73 @@ let montgomery_ladder_step_swap p q k i =
   let p0, q0 = conditional_swap bit p q in 
   let p1, q1 = montgomery_ladder_step1_seq p0 q0 in 
   let p2, q2 = conditional_swap bit p1 q1 in
+
+  lemma_swaped_steps p q;
+
+  assert(if uint_v bit = 0 then p0 == p /\ q0 == q else p0 == q /\ q0 == p);
+  assert(if uint_v bit = 0 
+    then 
+      let r0, r1 = montgomery_ladder_step1_seq p q in 
+      p2 == r0 /\ q2 == r1 
+    else 
+     let r0, r1 = montgomery_ladder_step0 p q in p2 == r0 /\ q2 == r1);
+
+  assert(
+     let pD = fromDomainPoint (point_prime_to_coordinates p) in 
+     let qD = fromDomainPoint (point_prime_to_coordinates q) in 
+
+     let p2D = fromDomainPoint (point_prime_to_coordinates p2) in 
+     let q2D = fromDomainPoint (point_prime_to_coordinates q2) in 
+
+     let r0Step1, r1Step1 = _ml_step1 pD qD in 
+     let r0Step0, r1Step0 = _ml_step0 pD qD in 
+
+     if uint_v bit = 0 then 
+       r0Step1 == p2D /\ r1Step1 == q2D
+     else 
+       r0Step0 == p2D /\ r1Step0 == q2D
+ 
+    );
+
+  let open Lib.RawIntTypes in  
+
+  
+  assert(
+    let pD = fromDomainPoint (point_prime_to_coordinates p) in 
+    let qD = fromDomainPoint (point_prime_to_coordinates q) in 
+
+    let p2D = fromDomainPoint (point_prime_to_coordinates p2) in 
+    let q2D = fromDomainPoint (point_prime_to_coordinates q2) in 
+    
+    let rf, qf = _ml_step k i pD qD in 
+
+    let r0Step1, r1Step1 = _ml_step1 pD qD in 
+    let r0Step0, r1Step0 = _ml_step0 pD qD  in 
+
+    if uint_to_nat bit = 0 then 
+       rf == r0Step1 /\ qf == r1Step1
+    else 
+       rf == r0Step0 /\ qf == r1Step0);
+
+
+    assert(
+    let pD = fromDomainPoint (point_prime_to_coordinates p) in 
+    let qD = fromDomainPoint (point_prime_to_coordinates q) in 
+
+    let p2D = fromDomainPoint (point_prime_to_coordinates p2) in 
+    let q2D = fromDomainPoint (point_prime_to_coordinates q2) in 
+    
+    let rf, qf = _ml_step k i pD qD in 
+
+    let r0Step1, r1Step1 = _ml_step1 pD qD in 
+    let r0Step0, r1Step0 = _ml_step0 pD qD  in 
+
+    if uint_to_nat bit = 0 then 
+       rf == p2D /\ qf == q2D
+    else 
+       rf == p2D /\ qf == q2D);
+
+
    (p2, q2)  
  
     
