@@ -154,10 +154,8 @@ val scalarMultiplication: p: point -> result: point ->
     )
   (ensures fun h0 _ h1 -> modifies3 p result tempBuffer h0 h1 /\
     (
-      let k = Lib.Sequence.create 12 (u64 0) in 
-      let (xD, yD, zD), f = montgomery_ladder_spec (as_seq h0 scalar) (point_prime_to_coordinates k, point_prime_to_coordinates (as_seq h0 p)) in 
       let x3, y3, z3 = point_x_as_nat h1 result, point_y_as_nat h1 result, point_z_as_nat h1 result in 
-      let (xN, yN, zN) = _norm (xD, yD, zD) in  
+      let (xN, yN, zN) = scalar_multiplication (as_seq h0 scalar) (point_prime_to_coordinates (as_seq h0 p)) in 
       x3 == xN /\ y3 == yN /\ z3 == zN 
   )
 ) 

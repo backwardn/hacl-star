@@ -31,61 +31,6 @@ let lemma_nat_4 f =
   assert_norm(r < pow2 256)
 
 
-val prime_lemma: a: nat -> Lemma (if a >= prime && a < (prime * 2) then
-a % prime == a - prime else True)
-
-let prime_lemma a = 
-  assert_norm (prime > 0);
-  if a >= prime && a < prime * 2 then 
-  modulo_lemma (a - prime) prime;
-  lemma_mod_plus (a - prime) 1 prime
-
-
-val lemma_for_multiplication_1: 
-  a: felem4 {as_nat4 a < prime} -> 
-  b: felem4 {as_nat4 b < prime} -> 
-  Lemma (ensures (
-    let p256 = (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) in 
-    let (x8, c) = add4 a b in 
-    let (x16, (r0, r1, r2, r3)) = sub4 c p256 in 
-    uint_v x8 == 1 ==> uint_v x16 == 1))
-
-let lemma_for_multiplication_1 a b = 
-  let p256 = (u64 0xffffffffffffffff, u64 0xffffffff, u64 0, u64 0xffffffff00000001) in 
-  assert_norm(prime < pow2 256);
-  assert_norm(as_nat4 p256 == prime);
-  let (x8, c) = add4 a b in 
-  let (x16, (r0, r1, r2, r3)) = sub4 c p256 in   
-  admit();
-  lemma_nat_4 c
-
-
-
-val small_modulo_lemma_extended: a: nat -> b: pos -> Lemma (if a < b then a % b = a else True)
-
-let small_modulo_lemma_extended a b = 
-  if a < b then 
-    small_modulo_lemma_1 a b
-
-
-
-val lemma_add4_zero: a: felem4 -> b: felem4 -> Lemma (let (c, r) = add4 a b in 
-  if as_nat4 a = 0 then uint_v c == 0 /\ as_nat4 r == as_nat4 b 
-  else if as_nat4 b = 0 then uint_v c == 0 /\ as_nat4 r == as_nat4 a 
-  else True)
-
-let lemma_add4_zero a b = ()
-  
-assume val lemma_adding_prime: a: felem4{as_nat4 a < prime}  -> b: felem4{as_nat4 b < prime} -> 
-Lemma (let (c, (r0, r1, r2, r3)) = sub4 a b in 
-  if as_nat4 a < as_nat4 b then 
-    (as_nat4 a - as_nat4 b) % prime == (as_nat4 (r0, r1, r2, r3) - pow2 256 + prime) 
-  else
-     (as_nat4 a - as_nat4 b) % prime == as_nat4 (r0, r1, r2, r3))
-
-
-
-
 val lemma_enough_to_carry: a: felem4 -> b: felem4 -> Lemma (
   if as_nat4 b >= (pow2 256 - as_nat4 a) then 
     let (c, r) = add4 a b in 
@@ -99,28 +44,6 @@ let lemma_enough_to_carry a b =
   end
   else
   ()
-
-
-val lemma_sub_add: a: felem4 -> b:felem4 ->
-  prime_temp: felem4{if as_nat4 a < as_nat4 b then as_nat4 prime_temp == prime else as_nat4 prime_temp == 0} ->  
-  r: felem4{if as_nat4 a < as_nat4 b then (as_nat4 a - as_nat4 b) % prime ==
-    (as_nat4 r - pow2 256 + prime) else (as_nat4 a - as_nat4 b) % prime == as_nat4 r} -> 
- Lemma(let (c, r1) = add4 prime_temp r in (as_nat4 a - as_nat4 b) % prime == as_nat4 r1)
-
-let lemma_sub_add a b prime_temp r = 
-  if as_nat4 a >= as_nat4 b then ()
-  else
-    begin
-      let result = as_nat4 r - pow2 256 + prime in 
-      let (c, r1) = add4 prime_temp r in 
-      lemma_enough_to_carry prime_temp r
-    end
-
-
-val equal_plus_minus : a: felem4 -> b: nat -> Lemma (as_nat4 a + b - b == as_nat4 a)
-
-let equal_plus_minus a b = ()
-
 
 
 let ( +% ) a b = (a + b) % prime
@@ -160,8 +83,6 @@ let modulo_distributivity_mult a b c =
   lemma_mod_mul_distr_r (a%c) b c
 
 
-
-
 val pow_plus: a: nat -> b: nat -> c: nat -> Lemma (ensures (pow a b * pow a c = pow a (b +c)))
 (decreases b)
 
@@ -197,8 +118,6 @@ let modp_inv2_pow (x: nat) : Tot (r: nat {r < prime}) =
    pow x (prime - 2) % prime
   
 
-
-
 val modulo_distributivity_mult_last_two: a: int -> b: int -> c: int -> d: int -> e: int -> f: pos -> 
 Lemma ((a * b * c * d * e) % f = (a * b * c * ((d * e) % f)) % f)
 
@@ -224,9 +143,8 @@ let lemma_division_is_multiplication t3 =
   let remainder = t3 / pow2 64 in 
   assert_norm(modp_inv2 (pow2 64) * pow2 64 % prime = 1);
   modulo_distributivity_mult remainder (modp_inv2 (pow2 64) * pow2 64) prime;
-  lemma_mod_twice remainder prime;
+  lemma_mod_twice remainder prime
 
-  ()
 
 val mult_one_round: t: nat -> co: nat{t % prime == co% prime}  -> Lemma
 (requires True)
@@ -243,9 +161,6 @@ let mult_one_round t co =
       lemma_division_is_multiplication t3;
       lemma_multiplication_to_same_number t3 co (modp_inv2 (pow2 64))
 
-val lemma_m: a: nat -> b: nat -> c: nat {b == c} -> Lemma (a * b = a * c)
-
-let lemma_m a b c = ()
 
 val lemma_decrease_pow: a: nat -> Lemma (ensures (a * modp_inv2 (pow2 64) * modp_inv2 (pow2 64) * modp_inv2 (pow2 64) * modp_inv2 (pow2 64))  % prime == (a * modp_inv2 (pow2 256)) % prime) 
 
@@ -334,8 +249,6 @@ let lemma_mul_nat5 a b c d e = ()
 
 
 
-  
-
 val modulo_distributivity_mult2: a: int -> b: int -> c: int -> d: pos -> Lemma (((a % d) * (b % d) * c) % d = (a * b * c)% d)
 
 let modulo_distributivity_mult2 a b c d = 
@@ -353,14 +266,6 @@ val lemma_multiplication_not_mod_prime: a: nat{a < prime} -> b: nat {b > 0 /\ b 
 let lemma_multiplication_not_mod_prime a b = admit()
 
 (*If k a ≡ k b (mod n) and k is coprime with n, then a ≡ b (mod n) *)
-
-val lemma_modular_multiplication: a: nat  -> b: nat -> 
-  n: pos -> k: pos {k % n <> 0} -> Lemma
-  (requires  k * a % prime =  k * b % prime)
-  (ensures a % prime == b % prime)
-
-
-let lemma_modular_multiplication a b n k = admit()
 
 val lemma_modular_multiplication_p256: a: nat{a < prime} -> b: nat{b < prime} -> 
   Lemma 
