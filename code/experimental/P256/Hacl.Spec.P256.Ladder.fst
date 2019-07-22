@@ -20,52 +20,6 @@ open Lib.Sequence
 open Lib.ByteSequence
 
 
-let scalar = lbytes 32
-
-let ith_bit (k:lbytes 32) (i:nat{i < 256}) : uint64 =
-	let q = i / 8 in let r = size (i % 8) in
- 	to_u64 ((index k q >>. r) &. u8 1)
-
-val _ml_step0: p: point_nat -> q: point_nat -> tuple2 point_nat point_nat
-
-let _ml_step0 r0 r1 = 
-  let r0 = _point_add r1 r0 in
-  let r1 = _point_double r1 in 
-  (r0, r1) 
-
-val _ml_step1: p: point_nat -> q: point_nat -> tuple2 point_nat point_nat
-
-let _ml_step1 r0 r1 = 
-  let r1 = _point_add r0 r1 in 
-  let r0 = _point_double r0 in 
-  (r0, r1)
-
-
-val _ml_step: k: scalar->  i: nat{i < 256} ->  (tuple2 point_nat point_nat) -> Tot (r: tuple2 point_nat point_nat)
-
-let _ml_step k i (p, q) = 
-  let bit = 255 - i in 
-  let bit = ith_bit k bit in 
-  let open Lib.RawIntTypes in 
-  if uint_to_nat bit = 0 then 
-      _ml_step1 p q 
-  else _ml_step0 p q  
-
-
-val montgomery_ladder_spec: k: scalar -> tuple2 point_nat point_nat -> Tot (tuple2 point_nat point_nat)
-
-let montgomery_ladder_spec k (p, q) = 
-  Lib.LoopCombinators.repeati 256  (_ml_step k) (p, q)
-
-
-val scalar_multiplication: k: scalar -> p: point_nat -> Tot point_nat
-  
-let scalar_multiplication k p = 
-  let pai = (0, 0, 0) in 
-  let q, f = montgomery_ladder_spec k (pai, p) in 
-  _norm q
-
-
 val point_prime_to_coordinates: p: point_seq -> Tot (r: tuple3 nat nat nat {
   let x2, y2, z2 = r in 
   let x1, y1, z1 = felem_seq_as_nat (sub p 0 4), felem_seq_as_nat (sub p 4 4), felem_seq_as_nat (sub p 8 4) in

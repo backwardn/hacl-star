@@ -13,61 +13,11 @@ open Hacl.Spec.P256.Core
 open Hacl.Spec.P256.MontgomeryMultiplication
 open Lib.Loops
 open FStar.Mul
+open Hacl.Spec.P256
 
 open Hacl.Spec.P256.MontgomeryMultiplication.PointDouble
 
 #reset-options "--z3rlimit 300 --z3refresh" 
-
-noextract
-let _point_add (p:point_nat) (q:point_nat) : point_nat = 
-  let open FStar.Tactics in 
-  let open FStar.Tactics.Canon in 
-
-  let (x1, y1, z1) = p in
-  let (x2, y2, z2) = q in 
-
-  let z2z2 = z2 * z2 in 
-  let z1z1 = z1 * z1 in 
-
-  let u1 = x1 * z2z2 % prime in 
-  let u2 = x2 * z1z1 % prime in 
-
-  assert_by_tactic (x1 * z2 * z2 = x1 * (z2 * z2)) canon;
-  assert_by_tactic (x2 * z1 * z1 = x2 * (z1 * z1)) canon;
-  
-  let s1 = y1 * z2 * z2z2 % prime in 
-  let s2 = y2 * z1 * z1z1 % prime in
-
-  assert_by_tactic (y1 * z2 * (z2 * z2) = y1 * z2 * z2 * z2) canon;
-  assert_by_tactic (y2 * z1 * (z1 * z1) = y2 * z1 * z1 * z1) canon;
-
-  if u1 = u2 && s1 = s2 && z1 <> 0 && z2 <> 0 then 
-     _point_double (x1, y1, z1) 
-  else 
-    begin
-
-      let h = (u2 - u1) % prime in 
-      let r = (s2 - s1) % prime in
-
-      let rr = (r * r)in 
-      let hh = (h * h) in 
-      let hhh = (h * h * h) in  
-
-	assert_by_tactic (forall (n: nat). n * h * h = n * (h * h)) canon; 
-	assert_by_tactic (s1 * (h * h * h) = s1 * h * h * h) canon;
-      let x3 = (rr - hhh - 2 * u1 * hh) % prime in 
-	assert(x3 = (r * r - h * h * h - 2 * u1 * h * h) % prime);
-      let y3 = (r * (u1 * hh - x3) - s1 * hhh) % prime in
-	assert(y3 = (r * (u1 * h*h - x3) - s1 * h*h*h) % prime);
-      let z3 = (h * z1 * z2) % prime in
-      if z2 = 0 then 
-	(x1, y1, z1) 
-      else if z1 = 0 then
-	(x2, y2, z2) 
-      else  
-	(x3, y3, z3)
-    end	
-
 
 val move_from_jacobian_coordinates_lemma: 
   p: point_prime ->

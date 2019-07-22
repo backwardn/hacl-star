@@ -13,17 +13,10 @@ open Hacl.Spec.P256.Core
 open Hacl.Spec.P256.MontgomeryMultiplication
 open Lib.Loops
 open FStar.Mul
+open Hacl.Spec.P256
+
 
 #set-options "--z3rlimit 300" 
-
-let _point_double  (p:point_nat) :  (p:point_nat) =
-  let x, y, z = p in 
-  let s = (4 * x * y * y) % prime in 
-  let m = ((-3) * z * z * z * z + 3 * x * x) % prime in 
-  let x3 = (m * m - 2 * s) % prime in 
-  let y3 = (m * (s - x3) - 8 * y * y * y * y) % prime in 
-  let z3 = (2 * y * z) % prime in 
-  (x3, y3, z3)
 
 
 val computeS:
