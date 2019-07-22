@@ -223,40 +223,6 @@ let substractionInDomain2Nat a b =
   substractionInDomainNat #k #l a b
 
 
-
-let rec pow a b =
-  if b = 0 then 1
-  else a * (pow a (b - 1))
-
-
-val pow_plus: a: nat -> b: nat -> c: nat -> Lemma (ensures (pow a b * pow a c = pow a (b +c)))
-(decreases b)
-
-let rec pow_plus a b c = 
-  match b with 
-  | 0 -> assert_norm (pow a 0 = 1)
-  | _ -> pow_plus a (b -1) c; 
-    assert_norm(pow a (b - 1) * a = pow a b)
-
-
-let rec power_distributivity a b c =
-   match b with 
-   | 0 -> ()
-   | _ -> 
-     power_distributivity a (b - 1) c; 
-     modulo_distributivity_mult (pow a (b -1)) a c;
-     lemma_mod_twice a c;
-     modulo_distributivity_mult (pow (a % c) (b -1)) (a % c) c
-
-
-val power_mult: a: nat -> b: nat -> c: nat -> Lemma (pow (pow a b) c == pow a (b * c))
-
-let rec power_mult a b c = 
-  match c with 
-  |0 -> assert_norm(pow a 0 = 1); assert(pow (pow a b) 0  = 1)
-  |_ ->  power_mult a b (c -1); pow_plus a (b * (c -1)) b
-
-
 let felem_add_seq a b = 
   let a0 = index a 0 in 
   let a1 = index a 1 in 

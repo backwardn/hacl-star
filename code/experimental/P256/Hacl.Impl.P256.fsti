@@ -23,6 +23,7 @@ open Hacl.Spec.P256.MontgomeryMultiplication.PointAdd
 open Hacl.Spec.P256.Normalisation 
 open Hacl.Spec.P256.Ladder
 
+open Hacl.Spec.P256
 
 open Lib.Loops
 open FStar.Math.Lemmas
@@ -137,3 +138,26 @@ val norm: p: point -> resultPoint: point -> tempBuffer: lbuffer uint64 (size 88)
    )   
   )
 
+
+
+val scalarMultiplication: p: point -> result: point -> 
+  scalar: lbuffer uint8 (size 32) -> 
+  tempBuffer: lbuffer uint64 (size 100) ->
+  Stack unit
+    (requires fun h -> 
+      live h p /\ live h result /\ live h scalar /\ live h tempBuffer /\
+    LowStar.Monotonic.Buffer.all_disjoint [loc p; loc tempBuffer; loc scalar; loc result] /\
+    eq_or_disjoint p result /\
+    as_nat h (gsub p (size 0) (size 4)) < prime /\ 
+    as_nat h (gsub p (size 4) (size 4)) < prime /\
+    as_nat h (gsub p (size 8) (size 4)) < prime
+    )
+  (ensures fun h0 _ h1 -> modifies3 p result tempBuffer h0 h1 /\
+    (
+      let k = Lib.Sequence.create 12 (u64 0) in 
+      let (xD, yD, zD), f = montgomery_ladder_spec (as_seq h0 scalar) (point_prime_to_coordinates k, point_prime_to_coordinates (as_seq h0 p)) in 
+      let x3, y3, z3 = point_x_as_nat h1 result, point_y_as_nat h1 result, point_z_as_nat h1 result in 
+      let (xN, yN, zN) = _norm (xD, yD, zD) in  
+      x3 == xN /\ y3 == yN /\ z3 == zN 
+  )
+) 

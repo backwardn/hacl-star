@@ -59,12 +59,6 @@ val substractionInDomain2Nat: a: nat {a < prime} -> b: nat { b < prime} -> Lemma
   ((a - b) % prime == toDomain_ (fromDomain_ a - fromDomain_ b))
   
 
-
-noextract
-val pow: a:nat -> b:nat -> res:nat
-
-val power_distributivity: a: nat -> b: nat -> c: pos -> Lemma ((pow (a % c) b) % c = (pow a b) % c)
-
 noextract 
 val felem_add_seq: a: felem_seq{felem_seq_as_nat a < prime} -> b: felem_seq{felem_seq_as_nat b < prime} -> 
   Tot (r: felem_seq {felem_seq_as_nat r < prime /\ 

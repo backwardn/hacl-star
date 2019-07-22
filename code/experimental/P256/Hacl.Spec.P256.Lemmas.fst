@@ -161,6 +161,44 @@ let modulo_distributivity_mult a b c =
 
 
 
+
+val pow_plus: a: nat -> b: nat -> c: nat -> Lemma (ensures (pow a b * pow a c = pow a (b +c)))
+(decreases b)
+
+let rec pow_plus a b c = 
+  match b with 
+  | 0 -> assert_norm (pow a 0 = 1)
+  | _ -> pow_plus a (b -1) c; 
+    assert_norm(pow a (b - 1) * a = pow a b)
+
+
+val power_distributivity: a: nat -> b: nat -> c: pos -> Lemma ((pow (a % c) b) % c = (pow a b) % c)
+
+let rec power_distributivity a b c =
+   match b with 
+   | 0 -> ()
+   | _ -> 
+     power_distributivity a (b - 1) c; 
+     modulo_distributivity_mult (pow a (b -1)) a c;
+     lemma_mod_twice a c;
+     modulo_distributivity_mult (pow (a % c) (b -1)) (a % c) c
+
+
+val power_mult: a: nat -> b: nat -> c: nat -> Lemma (pow (pow a b) c == pow a (b * c))
+
+let rec power_mult a b c = 
+  match c with 
+  |0 -> assert_norm(pow a 0 = 1); assert(pow (pow a b) 0  = 1)
+  |_ ->  power_mult a b (c -1); pow_plus a (b * (c -1)) b
+
+
+let modp_inv2_pow (x: nat) : Tot (r: nat {r < prime}) = 
+   power_distributivity x (prime - 2) prime;
+   pow x (prime - 2) % prime
+  
+
+
+
 val modulo_distributivity_mult_last_two: a: int -> b: int -> c: int -> d: int -> e: int -> f: pos -> 
 Lemma ((a * b * c * d * e) % f = (a * b * c * ((d * e) % f)) % f)
 

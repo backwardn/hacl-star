@@ -143,3 +143,12 @@ let long_as_nat (h:mem) (e:long) : GTot nat =
   let s7 = s.[7] in
   let s8 = s.[8] in 
   as_nat9 (s0, s1, s2, s3, s4, s5, s6, s7, s8)
+
+
+
+noextract
+val pow: a:nat -> b:nat -> res:nat
+
+let rec pow a b =
+  if b = 0 then 1
+  else a * (pow a (b - 1))

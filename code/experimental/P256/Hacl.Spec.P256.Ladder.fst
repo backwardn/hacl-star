@@ -12,6 +12,8 @@ open Hacl.Spec.P256.MontgomeryMultiplication
 open Hacl.Spec.P256.MontgomeryMultiplication.PointAdd 
 open Hacl.Spec.P256.MontgomeryMultiplication.PointDouble
 open Hacl.Impl.Curve25519.Field64.Core
+open Hacl.Spec.P256
+
 
 open FStar.Math.Lemmas
 open Lib.Sequence
@@ -54,6 +56,14 @@ val montgomery_ladder_spec: k: scalar -> tuple2 point_nat point_nat -> Tot (tupl
 
 let montgomery_ladder_spec k (p, q) = 
   Lib.LoopCombinators.repeati 256  (_ml_step k) (p, q)
+
+
+val scalar_multiplication: k: scalar -> p: point_nat -> Tot point_nat
+  
+let scalar_multiplication k p = 
+  let pai = (0, 0, 0) in 
+  let q, f = montgomery_ladder_spec k (pai, p) in 
+  _norm q
 
 
 val point_prime_to_coordinates: p: point_seq -> Tot (r: tuple3 nat nat nat {
