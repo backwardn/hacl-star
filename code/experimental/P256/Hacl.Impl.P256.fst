@@ -1143,20 +1143,77 @@ let montgomery_ladder p q scalar tempBuffer =
 
  )
 
+val zero_buffer: p: point -> 
+  Stack unit
+    (requires fun h -> live h p)
+    (ensures fun h0 _ h1 ->     
+      modifies1 p h0 h1 /\
+    as_nat h1 (gsub p (size 0) (size 4)) == 0 /\ 
+    as_nat h1 (gsub p (size 4) (size 4)) == 0 /\
+    as_nat h1 (gsub p (size 8) (size 4)) == 0)
 
+let zero_buffer p = 
+  upd p (size 0) (u64 0);
+  upd p (size 1) (u64 0);
+  upd p (size 2) (u64 0);
+  upd p (size 3) (u64 0);
+  upd p (size 4) (u64 0);
+  upd p (size 5) (u64 0);
+  upd p (size 6) (u64 0);
+  upd p (size 7) (u64 0);
+  upd p (size 8) (u64 0);
+  upd p (size 9) (u64 0);
+  upd p (size 10) (u64 0);
+  upd p (size 11) (u64 0)
+
+
+
+val scalarMultiplication: p: point -> result: point -> 
+  scalar: lbuffer uint8 (size 32) -> 
+  tempBuffer: lbuffer uint64 (size 100) ->
+  Stack unit
+    (requires fun h -> 
+      live h p /\ live h result /\ live h scalar /\ live h tempBuffer /\
+    LowStar.Monotonic.Buffer.all_disjoint [loc p; loc tempBuffer; loc scalar; loc result] /\
+    eq_or_disjoint p result /\
+    as_nat h (gsub p (size 0) (size 4)) < prime /\ 
+    as_nat h (gsub p (size 4) (size 4)) < prime /\
+    as_nat h (gsub p (size 8) (size 4)) < prime
+    )
+  (ensures fun h0 _ h1 -> modifies3 p result tempBuffer h0 h1)
   
-  
-
-      
-  
-
-
 
 let scalarMultiplication p result scalar tempBuffer  = 
-  let scalarSize = 256ul in 
-  pointToDomain p result;
+    let h0 = ST.get() in 
   let q = sub tempBuffer (size 0) (size 12) in 
+  zero_buffer q;
+    let h1 = ST.get() in 
+    modifies1_is_modifies3 p result tempBuffer h0 h1;
+    assert(modifies3 p result tempBuffer h0 h1);
   let buff = sub tempBuffer (size 12) (size 88) in 
+  pointToDomain p result;
+    let h2 = ST.get() in 
+    modifies2_is_modifies3 p result tempBuffer h1 h2;
+    assert(modifies3 p result tempBuffer h1 h2);
   montgomery_ladder q result scalar buff;
-  norm q result buff
+    let h3 = ST.get() in 
+    assert(
+	let p1 = fromDomainPoint(point_prime_to_coordinates (as_seq h1 p)) in 
+	let q1 = fromDomainPoint(point_prime_to_coordinates (as_seq h1 q)) in 
+	let rN, qN = montgomery_ladder_spec (as_seq h0 scalar) 
+	  (
+	    fromDomainPoint(point_prime_to_coordinates (as_seq h0 p)),  
+	    fromDomainPoint(point_prime_to_coordinates (as_seq h0 q))
+	  ) in 
+	rN == p1 /\ qN == q1
+      );
+    assert(modifies3 p result tempBuffer h2 h3);
+  norm q result buff; 
+    let h4 = ST.get() in 
+    modifies2_is_modifies3 p result tempBuffer h3 h4;
+    assert(modifies3 p result tempBuffer h3 h4);
+
+    assert(modifies3 p result tempBuffer h0 h2);
+    assert(modifies3 p result tempBuffer h2 h4);
+    assert(modifies3 p result tempBuffer h0 h4)
   

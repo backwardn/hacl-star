@@ -116,7 +116,7 @@ val point_add: p: point -> q: point -> result: point -> tempBuffer: lbuffer uint
   )
 
 
-val norm: p: point -> resultPoint: point -> tempBuffer: lbuffer uint64 (size 32) -> Stack unit
+val norm: p: point -> resultPoint: point -> tempBuffer: lbuffer uint64 (size 88) -> Stack unit
   (requires fun h -> live h p /\ live h resultPoint /\ live h tempBuffer /\ disjoint p tempBuffer /\ disjoint tempBuffer resultPoint /\ 
     as_nat h (gsub p (size 0) (size 4)) < prime /\
     as_nat h (gsub p (size 4) (size 4)) < prime /\
@@ -137,11 +137,3 @@ val norm: p: point -> resultPoint: point -> tempBuffer: lbuffer uint64 (size 32)
    )   
   )
 
-
-
-val scalarMultiplication: p: point -> result: point -> 
-  scalar: lbuffer uint8 (size 32) -> 
-  tempBuffer: lbuffer uint64 (size 100) ->
-  Stack unit
-  (requires fun h -> live h p /\ live h result /\ live h tempBuffer)
-  (ensures fun h0 _ h1 -> True)
