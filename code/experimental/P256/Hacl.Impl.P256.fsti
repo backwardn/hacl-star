@@ -159,3 +159,14 @@ val scalarMultiplication: p: point -> result: point ->
       x3 == xN /\ y3 == yN /\ z3 == zN 
   )
 ) 
+
+
+
+val isPointAtInfinity: p: point -> Stack bool
+  (requires fun h -> live h p)
+  (ensures fun h0 _ h1 -> h0 == h1) 
+
+
+val isPointOnCurve: p: point -> Stack bool
+  (requires fun h -> live h p)
+  (ensures fun h0 _ h1 -> h0 == h1)

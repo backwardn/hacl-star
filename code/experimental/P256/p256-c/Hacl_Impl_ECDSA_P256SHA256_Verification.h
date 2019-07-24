@@ -6,21 +6,25 @@
  */
 
 #include "kremlib.h"
-#ifndef __FStar_H
-#define __FStar_H
+#ifndef __Hacl_Impl_ECDSA_P256SHA256_Verification_H
+#define __Hacl_Impl_ECDSA_P256SHA256_Verification_H
 
-
+#include "FStar.h"
 #include "TestLib.h"
 #include "c/Lib_PrintBuffer.h"
 #include "FStar_UInt_8_16_32_64.h"
 
-extern uint64_t FStar_UInt64_eq_mask(uint64_t x0, uint64_t x1);
+bool Hacl_Impl_ECDSA_P256SHA256_Verification_isCoordinateValid(uint64_t *p);
 
-extern uint128_t FStar_UInt128_shift_right(uint128_t x0, uint32_t x1);
+bool
+Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
+  uint64_t *pubKey,
+  uint64_t *r,
+  uint64_t *s1,
+  uint32_t mLen,
+  uint64_t *m,
+  uint64_t *tempBuffer
+);
 
-extern uint64_t FStar_UInt128_uint128_to_uint64(uint128_t x0);
-
-extern uint128_t FStar_UInt128_mul_wide(uint64_t x0, uint64_t x1);
-
-#define __FStar_H_DEFINED
+#define __Hacl_Impl_ECDSA_P256SHA256_Verification_H_DEFINED
 #endif

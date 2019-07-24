@@ -1219,3 +1219,74 @@ let scalarMultiplication p result scalar tempBuffer  =
     assert(modifies3 p result tempBuffer h2 h4);
     assert(modifies3 p result tempBuffer h0 h4)
   
+
+let isPointAtInfinity p = 
+  let z0 = index p (size 8) in 
+  let z1 = index p (size 9) in 
+  let z2 = index p (size 10) in 
+  let z3 = index p (size 11) in 
+  let z0_zero = eq_0_u64 z0 in 
+  let z1_zero = eq_0_u64 z1 in 
+  let z2_zero = eq_0_u64 z2 in 
+  let z3_zero = eq_0_u64 z3 in 
+  z0_zero && z1_zero && z2_zero && z3_zero
+
+
+val y_2: y: felem -> r: felem -> Stack unit
+  (requires fun h -> as_nat h y < prime /\  live h y /\ live h r /\ eq_or_disjoint y r)
+  (ensures fun h0 _ h1 -> as_nat h1 r == toDomain_ ((as_nat h0 y) * (as_nat h0 y) % prime))
+
+let y_2 y r = 
+    let h0 = ST.get() in 
+  toDomain y r;
+    let h1 = ST.get() in 
+    assert(as_nat h1 r == toDomain_ (as_nat h0 y));
+  montgomery_multiplication_buffer r r r;
+    let h2 = ST.get() in 
+    assert(as_nat h2 r == toDomain_ ((as_nat h0 y) *  (as_nat h0 y) % prime))
+
+assume val upload_p256_point_on_curve_constant: x: felem -> Stack unit
+  (requires fun h -> live h x)
+  (ensures fun h0 _ h1 -> modifies1 x h0 h1)
+
+val xcube_minus_x: x: felem ->r: felem -> Stack unit 
+  (requires fun h -> as_nat h x < prime /\ live h x  /\ live h r /\ eq_or_disjoint x r)
+  (ensures fun h0 _ h1 -> True)
+
+let xcube_minus_x x r = 
+  push_frame();
+    let xToDomainBuffer = create (size 4) (u64 0) in 
+    let minusThreeXBuffer = create (size 4) (u64 0) in 
+    let p256_constant = create (size 4) (u64 0) in 
+    let h0 = ST.get() in 
+  toDomain x xToDomainBuffer;
+    let h1 = ST.get() in 
+    assert(as_nat h1 xToDomainBuffer == toDomain_ (as_nat h0 x));
+  montgomery_multiplication_buffer xToDomainBuffer xToDomainBuffer r;
+    let h2 = ST.get() in 
+    assert(as_nat h2 r == toDomain_ ((as_nat h0 x) * (as_nat h0 x) % prime));
+  montgomery_multiplication_buffer xToDomainBuffer r r;
+    let h3 = ST.get() in 
+    admit();
+  multByMinusThree xToDomainBuffer minusThreeXBuffer;
+  p256_sub r minusThreeXBuffer r;
+  upload_p256_point_on_curve_constant p256_constant;
+  p256_sub r p256_constant r;
+  pop_frame(); 
+  admit()
+
+
+let isPointOnCurve p = 
+   push_frame();
+     let y2Buffer = create (size 4) (u64 0) in 
+     let xBuffer = create (size 4) (u64 0) in 
+     
+     let x = sub p (size 0) (size 4) in 
+     let y = sub p (size 4) (size 4) in 
+     let yResult = y_2 y y2Buffer in 
+     let xResult = xcube_minus_x x xBuffer in 
+     let r = compare_felem yResult xResult in 
+     let r = eq #U64 r (u64 0) in 
+  pop_frame();   
+    r
+

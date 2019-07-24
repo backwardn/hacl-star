@@ -116,7 +116,6 @@ let add4_variables x cin y0 y1 y2 y3 result =
     cc
 
 
-
 val sub_borrow: cin: uint64{uint_v cin <= 1} -> x: uint64 -> y: uint64 -> r: lbuffer uint64 (size 1) -> 
   Stack uint64
     (requires fun h -> live h r)
@@ -139,7 +138,7 @@ let sub_borrow cin x y result1 =
   Lib.Buffer.upd result1 (size 0) res;
   c
 
-inline_for_extraction noextract
+
 val sub4_il: x: felem -> y: ilbuffer uint64 (size 4) -> result: felem -> 
   Stack uint64
     (requires fun h -> live h x /\ live h y /\ live h result /\ disjoint x result /\ disjoint y result)
@@ -165,7 +164,6 @@ let sub4_il x y result =
     cc
 
 
-inline_for_extraction noextract
 val sub4: x: felem -> y:felem -> result: felem -> 
   Stack uint64
     (requires fun h -> live h x /\ live h y /\ live h result /\ eq_or_disjoint x result /\ eq_or_disjoint y result)
