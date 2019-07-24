@@ -12,9 +12,7 @@ module ST = FStar.HyperStack.ST
 open Hacl.Spec.P256.Lemmas
 open Hacl.Spec.P256.Definitions
 open Hacl.Spec.P256.Core
-
-open Hacl.Impl.Curve25519.Field64.Core
-module D = Hacl.Spec.Curve25519.Field64.Definition
+open Hacl.Spec.P256.Basic
 
 open Lib.IntTypes
 open Lib.Buffer

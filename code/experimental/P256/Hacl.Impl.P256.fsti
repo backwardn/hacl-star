@@ -10,9 +10,6 @@ module HS = FStar.HyperStack
 open Lib.IntTypes
 open Lib.Buffer
 
-open Hacl.Impl.Curve25519.Field64.Core
-module C =  Hacl.Spec.Curve25519.Field64.Core
-module D = Hacl.Spec.Curve25519.Field64.Definition
 open  Hacl.Spec.P256.Core
 open Hacl.Spec.P256.Lemmas
 open Hacl.Spec.P256.Definitions
@@ -40,7 +37,7 @@ let point_x_as_nat (h: mem) (e: point) : GTot nat =
   let s1 = s.[1] in 
   let s2 = s.[2] in 
   let s3 = s.[3] in 
-  D.as_nat4 (s0, s1, s2, s3)
+  as_nat4 (s0, s1, s2, s3)
 
 noextract 
 let point_y_as_nat (h: mem) (e: point) : GTot nat = 
@@ -50,7 +47,7 @@ let point_y_as_nat (h: mem) (e: point) : GTot nat =
   let s1 = s.[5] in 
   let s2 = s.[6] in 
   let s3 = s.[7] in 
-  D.as_nat4 (s0, s1, s2, s3)
+  as_nat4 (s0, s1, s2, s3)
 
 noextract 
 let point_z_as_nat (h: mem) (e: point) : GTot nat = 
@@ -60,7 +57,7 @@ let point_z_as_nat (h: mem) (e: point) : GTot nat =
   let s1 = s.[9] in 
   let s2 = s.[10] in 
   let s3 = s.[11] in 
-  D.as_nat4 (s0, s1, s2, s3)
+  as_nat4 (s0, s1, s2, s3)
 
 
 val pointToDomain: p: point -> result: point -> Stack unit 

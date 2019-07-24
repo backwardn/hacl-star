@@ -13,9 +13,6 @@ open Hacl.Spec.P256.Lemmas
 open Hacl.Spec.P256.Definitions
 open Hacl.Spec.P256.Core
 
-open Hacl.Impl.Curve25519.Field64.Core
-open Hacl.Spec.Curve25519.Field64.Definition
-
 open Lib.IntTypes
 open Lib.Buffer
 open Lib.Sequence

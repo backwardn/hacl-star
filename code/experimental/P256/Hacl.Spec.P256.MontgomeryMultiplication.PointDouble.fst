@@ -5,10 +5,8 @@ open FStar.Math.Lemmas
 open FStar.Math.Lib
 open Hacl.Spec.P256.Lemmas
 open Hacl.Spec.P256.Definitions
-open Hacl.Spec.Curve25519.Field64.Definition
 open Hacl.Spec.P256.Core
 open Lib.Sequence
-open Hacl.Impl.Curve25519.Field64.Core
 open Hacl.Spec.P256.Core
 open Hacl.Spec.P256.MontgomeryMultiplication
 open Lib.Loops

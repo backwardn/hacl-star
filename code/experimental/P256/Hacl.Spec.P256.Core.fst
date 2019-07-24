@@ -4,10 +4,9 @@ open Lib.IntTypes
 open FStar.Math.Lemmas
 open FStar.Math.Lib
 
-open Hacl.Spec.Curve25519.Field64.Definition
 open Hacl.Spec.P256.Definitions
-open Hacl.Spec.Curve25519.Field64.Core
 open Hacl.Spec.P256.Lemmas
+open Hacl.Spec.P256.Basic
 
 open FStar.Mul
 
@@ -364,7 +363,7 @@ let add8_without_carry1 (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5
   (r0, r1, r2, r3, r4, r5, r6, r7)
 
 #reset-options "--z3refresh --z3rlimit 300"
-
+noextract inline_for_extraction
 val shortened_mul: a: felem4 -> b: uint64 -> Tot (r: felem8 {as_nat4 a * uint_v b = wide_as_nat4 r
   /\ wide_as_nat4 r < pow2 320})
 
@@ -384,12 +383,6 @@ inline_for_extraction noextract
 val mod_64: a: felem8 -> Tot (r: uint64 {wide_as_nat4 a % pow2 64 = uint_v r})
 
 let mod_64 (a0, a1, a2, a3, a4, a5, a6, a7) =  a0
-
-inline_for_extraction noextract
-val shift_9: a: felem9 -> Tot (r: felem8 {as_nat9 a / pow2 64 = wide_as_nat4 r})
-
-let shift_9 (a0, a1, a2, a3, a4, a5, a6, a7, a8) = 
-  (a1, a2, a3, a4, a5, a6, a7, a8)
 
 inline_for_extraction noextract
 val shift_8: a: felem8 -> Tot (r: felem8 {wide_as_nat4 a / pow2 64 = wide_as_nat4 r})

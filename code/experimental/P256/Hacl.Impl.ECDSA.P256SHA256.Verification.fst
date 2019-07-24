@@ -11,8 +11,6 @@ open Hacl.Spec.P256.Definitions
 open Hacl.Impl.LowLevel
 open Hacl.Impl.P256
 
-open Hacl.Impl.Curve25519.Field64.Core
-
 val isCoordinateValid: p: lbuffer uint64 (size 12) -> Stack bool 
   (requires fun h -> live h p)
   (ensures fun h0 _ h1 -> h0 == h1 /\

@@ -8,6 +8,7 @@ open FStar.HyperStack
 open FStar.HyperStack.All
 open Lib.Sequence
 open Lib.Buffer
+open FStar.Mul
 
 
 noextract
@@ -33,20 +34,39 @@ let p256_prime_list : x:list uint64{List.Tot.length x == 4 /\
     assert_norm(0xffffffffffffffff + 0xffffffff * pow2 64 + 0xffffffff00000001 * pow2 192 == prime);
   x
 
+inline_for_extraction noextract
+let felem4 = tuple4 uint64 uint64 uint64 uint64
+inline_for_extraction noextract
+let felem8 = tuple8 uint64 uint64 uint64 uint64 uint64 uint64 uint64 uint64
+inline_for_extraction noextract
+let felem8_32 = tuple8 uint32 uint32 uint32 uint32 uint32 uint32 uint32 uint32
+inline_for_extraction noextract
+let felem9 = tuple9 uint64 uint64 uint64  uint64 uint64 uint64 uint64 uint64 uint64
 
-open Hacl.Spec.Curve25519.Field64.Definition
 
-inline_for_extraction noextract
-let felem4 = uint64 * uint64 * uint64 * uint64
-inline_for_extraction noextract
-let felem8 = uint64 * uint64  * uint64  * uint64 * uint64 * uint64 * uint64 * uint64
-inline_for_extraction noextract
-let felem8_32 = uint32 * uint32 * uint32 * uint32 * uint32 * uint32 * uint32 * uint32
-inline_for_extraction noextract
-let felem9 = uint64 * uint64  * uint64  * uint64 * uint64 * uint64 * uint64 * uint64 * uint64
 
 noextract
-let point_nat = nat * nat * nat
+val as_nat4: f:felem4 -> GTot nat
+let as_nat4 f =
+  let (s0, s1, s2, s3) = f in
+  v s0 + v s1 * pow2 64 + v s2 * pow2 64 * pow2 64 +
+  v s3 * pow2 64 * pow2 64 * pow2 64
+
+
+noextract
+val wide_as_nat4: f:felem8 -> GTot nat
+let wide_as_nat4 f =
+  let (s0, s1, s2, s3, s4, s5, s6, s7) = f in
+  v s0 + v s1 * pow2 64 + v s2 * pow2 64 * pow2 64 +
+  v s3 * pow2 64 * pow2 64 * pow2 64 +
+  v s4 * pow2 64 * pow2 64 * pow2 64 * pow2 64 +
+  v s5 * pow2 64 * pow2 64 * pow2 64 * pow2 64 * pow2 64 +
+  v s6 * pow2 64 * pow2 64 * pow2 64 * pow2 64 * pow2 64 * pow2 64 +
+  v s7 * pow2 64 * pow2 64 * pow2 64 * pow2 64 * pow2 64 * pow2 64 * pow2 64
+
+
+noextract
+let point_nat = tuple3 nat nat nat
 
 noextract
 let point_seq = Lib.Sequence.lseq uint64 12 
@@ -56,8 +76,16 @@ let felem_seq = lseq uint64 4
 
 inline_for_extraction
 let felem = lbuffer uint64 (size 4)
-inline_for_extraction
-let longelem = lbuffer uint64 (size 8)
+
+noextract
+let as_nat (h:mem) (e:felem) : GTot nat =
+  let s = as_seq h e in
+  let s0 = s.[0] in
+  let s1 = s.[1] in
+  let s2 = s.[2] in
+  let s3 = s.[3] in
+  as_nat4 (s0, s1, s2, s3)
+
 
 noextract
 let felem_seq_as_nat (a: felem_seq) : Tot nat  = 

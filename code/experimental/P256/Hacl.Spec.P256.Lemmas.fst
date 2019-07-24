@@ -3,8 +3,7 @@ module Hacl.Spec.P256.Lemmas
 open Lib.IntTypes
 open FStar.Math.Lemmas
 open FStar.Math.Lib
-open Hacl.Spec.Curve25519.Field64.Definition
-open  Hacl.Spec.Curve25519.Field64.Core
+open Hacl.Spec.P256.Basic
 
 open FStar.Mul
 

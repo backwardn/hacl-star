@@ -42,6 +42,7 @@ FSTAR = $(FSTAR_HOME)/bin/fstar.exe $(FSTAR_FLAGS)
 
 ENABLE_HINTS = --use_hints --use_hint_hashes --record_hints --query_stats
 
+#ROOTS = Hacl.Impl.P256.fst
 ROOTS = Hacl.Impl.ECDSA.P256SHA256.Verification.fst
 #ROOTS = Hacl.Test.CSHAKE.fst
 
@@ -87,13 +88,15 @@ KREMLIN=$(KREMLIN_HOME)/krml
 
 # 2. Generation of .c files
 
+#-bundle 'Hacl.Impl.ECDSA.P256SHA256.Verification=Hacl.Impl.ECDSA.P256SHA256.Verification,Hacl.Impl.P256,Hacl.Impl.LowLevel,Hacl.Impl.SolinasReduction,Hacl.Spec.P256.*,Hacl.Spec.Curve25519.*,Hacl.Impl.Curve25519.*' \
 # We use -drop (deprecated) only to avoid creating unnecessary .c,.h files
 $(GENERATED_DIR)/Makefile.include: $(ALL_KRML_FILES) | .depend
 	$(KREMLIN) $(KREMLIN_TESTLIB) -skip-compilation \
 	-no-prefix 'Hacl.Impl.P256' \
 	-bundle 'Lib.*' \
 	-bundle 'Spec.*' \
-	-bundle 'Hacl.Impl.ECDSA.P256SHA256.Verification=Hacl.Impl.ECDSA.P256SHA256.Verification,Hacl.Impl.P256,Hacl.Impl.LowLevel,Hacl.Impl.SolinasReduction,Hacl.Spec.P256.*,Hacl.Spec.Curve25519.*,Hacl.Impl.Curve25519.*' \
+	-bundle 'Hacl.Impl.P256=Hacl.Impl.P256,Hacl.Impl.LowLevel,Hacl.Impl.SolinasReduction,Hacl.Spec.P256.*,Hacl.Spec.Curve25519.*,Hacl.Impl.Curve25519.*' \
+	-bundle 'Hacl.Impl.ECDSA.P256SHA256.Verification=Hacl.Impl.ECDSA.P256SHA256.Verification' \
 	-library 'C,FStar' \
 	-drop 'LowStar,Spec,Prims,Lib,C.Loops.*,Hacl.Spec.P256.Lemmas,Hacl.Spec.P256' \
 	-add-include '"c/Lib_PrintBuffer.h"' \

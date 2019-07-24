@@ -11,7 +11,6 @@ open Hacl.Spec.P256.Definitions
 open Hacl.Spec.P256.MontgomeryMultiplication
 open Hacl.Spec.P256.MontgomeryMultiplication.PointAdd 
 open Hacl.Spec.P256.MontgomeryMultiplication.PointDouble
-open Hacl.Impl.Curve25519.Field64.Core
 open Hacl.Spec.P256
 
 

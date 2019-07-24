@@ -9,9 +9,7 @@ open Lib.Buffer
 
 open Hacl.Spec.P256.Definitions
 open Hacl.Spec.P256.Lemmas
-open Hacl.Spec.Curve25519.Field64.Core 
-open Hacl.Spec.Curve25519.Field64.Definition
-open Hacl.Impl.Curve25519.Field64.Core
+open Hacl.Spec.P256.Basic
 open Hacl.Spec.P256.MontgomeryMultiplication
 
 open FStar.Math.Lemmas
@@ -128,7 +126,6 @@ val sub_borrow: cin: uint64{uint_v cin <= 1} -> x: uint64 -> y: uint64 -> r: lbu
 
 
 let sub_borrow cin x y result1 = 
-  let open Hacl.Spec.Curve25519.Field64.Core in 
   let res = x -. y -. cin in
   let c =
     if eq_u64 cin (u64 1) then

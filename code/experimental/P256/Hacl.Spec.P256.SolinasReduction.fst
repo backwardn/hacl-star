@@ -4,7 +4,6 @@ module Hacl.Spec.P256.SolinasReduction
 open Lib.IntTypes 
 open FStar.Math.Lemmas
 open FStar.Math.Lib
-module D = Hacl.Spec.Curve25519.Field64.Definition
 open Hacl.Spec.P256.Definitions
 open FStar.Mul
 open Lib.Sequence

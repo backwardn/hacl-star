@@ -3,12 +3,11 @@ module Hacl.Spec.P256.Core
 open Lib.IntTypes
 open FStar.Math.Lemmas
 open FStar.Math.Lib
-open Hacl.Spec.Curve25519.Field64.Definition
 open Hacl.Spec.P256.Definitions
-open Hacl.Spec.Curve25519.Field64.Core
 open Hacl.Spec.P256.Lemmas
 
 open FStar.Mul
+
 
 inline_for_extraction noextract
 val eq_u64:a:uint64 -> b:uint64 -> Tot (r: bool {if uint_v a = uint_v b then r == true else r == false})

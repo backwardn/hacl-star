@@ -7,8 +7,8 @@ module ST = FStar.HyperStack.ST
 open Lib.IntTypes
 open Lib.Buffer
 
-open Hacl.Impl.Curve25519.Field64.Core
 open Hacl.Spec.P256.Core
+
 open Hacl.Spec.P256.Lemmas
 open Hacl.Spec.P256.Definitions
 open Hacl.Impl.SolinasReduction
@@ -54,8 +54,8 @@ let pointToDomain p result =
 
 inline_for_extraction noextract 
 val multiplication_partially_opened: a: felem4 -> b: felem -> result: felem ->Stack unit
-  (requires fun h -> D.as_nat4 a < prime /\ as_nat h b < prime /\ live h b /\ live h result)
-  (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result = (D.as_nat4 a * as_nat h0 b * modp_inv2(pow2 256)) % prime)
+  (requires fun h -> as_nat4 a < prime /\ as_nat h b < prime /\ live h b /\ live h result)
+  (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 result = (as_nat4 a * as_nat h0 b * modp_inv2(pow2 256)) % prime)
 
 let multiplication_partially_opened (a0, a1, a2, a3) b result = 
   let b0 = index b (size 0) in 
@@ -64,7 +64,7 @@ let multiplication_partially_opened (a0, a1, a2, a3) b result =
   let b3 = index b (size 3) in 
 
   let (r0, r1, r2, r3) = montgomery_multiplication (a0, a1, a2, a3) (b0, b1, b2, b3) in 
-  assert(D.as_nat4 (r0, r1, r2, r3) = D.as_nat4 (a0, a1, a2, a3) * D.as_nat4 (b0, b1, b2, b3) * modp_inv2(pow2 256) % prime);
+  assert(as_nat4 (r0, r1, r2, r3) = as_nat4 (a0, a1, a2, a3) * as_nat4 (b0, b1, b2, b3) * modp_inv2(pow2 256) % prime);
  
   upd result (size 0) r0;
   upd result (size 1) r1;
@@ -1245,9 +1245,12 @@ let y_2 y r =
     let h2 = ST.get() in 
     assert(as_nat h2 r == toDomain_ ((as_nat h0 y) *  (as_nat h0 y) % prime))
 
-assume val upload_p256_point_on_curve_constant: x: felem -> Stack unit
+val upload_p256_point_on_curve_constant: x: felem -> Stack unit
   (requires fun h -> live h x)
   (ensures fun h0 _ h1 -> modifies1 x h0 h1)
+
+let upload_p256_point_on_curve_constant x = ()
+
 
 val xcube_minus_x: x: felem ->r: felem -> Stack unit 
   (requires fun h -> as_nat h x < prime /\ live h x  /\ live h r /\ eq_or_disjoint x r)
