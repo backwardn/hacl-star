@@ -141,3 +141,9 @@ val exponent: a: felem ->result: felem -> tempBuffer: lbuffer uint64 (size 20) -
   disjoint a tempBuffer /\ as_nat h a < prime)
   (ensures fun h0 _ h1 -> modifies2 result tempBuffer h0 h1 /\ (let k = fromDomain_ (as_nat h0 a) in 
     as_nat h1 result =  toDomain_ ((pow k (prime-2)) % prime)))
+
+
+val clean_exponent: a: felem -> result: felem -> tempBuffer: lbuffer uint64 (size 20) -> Stack unit
+  (requires fun h -> live h a  /\ live h result /\ live h tempBuffer /\ disjoint tempBuffer result /\
+    disjoint a tempBuffer /\ as_nat h a < prime)
+  (ensures fun h0 _ h1 -> True) 

@@ -165,7 +165,7 @@ let mul1 (f0, f1, f2, f3) u =
   lemma_as_nat4 out;
   lemma_mul1_no_carry (as_nat4 out) (as_nat4 (f0, f1, f2, f3) * v u) (v h3 + v c2);
   let c3 = h3 +! c2 in
-  c3, out
+  c3, (o0, o1, o2, o3)
 
 noextract inline_for_extraction
 val mul1_add:
@@ -245,19 +245,13 @@ val mul4:
     f:felem4
   -> r:felem4
   -> out:felem8{wide_as_nat4 out == as_nat4 f * as_nat4 r}
-let mul4 f r =
-  let (f0, f1, f2, f3) = f in
-  let c0, out0 = mul1 r f0 in
-  let (o00, o01, o02, o03) = out0 in
-  let c1, out1 = mul1_add r f1 (o01, o02, o03, c0) in
-  let (o11, o12, o13, o14) = out1 in
-  let c2, out2 = mul1_add r f2 (o12, o13, o14, c1) in
-  let (o22, o23, o24, o25) = out2 in
-  let c3, out3 = mul1_add r f3 (o23, o24, o25, c2) in
-  let (o33, o34, o35, o36) = out3 in
-  let o37 = c3 in
-  let out = (o00, o11, o22, o33, o34, o35, o36, o37) in
-  lemma_mul4 (as_nat4 r) (v f0) (v f1) (v f2) (v f3) (v c0) (v c1) (v c2) (v c3)
+let mul4 (f0, f1, f2, f3) (r0, r1, r2, r3) =
+  let c0, (o00, o01, o02, o03) = mul1 (r0, r1, r2, r3) f0 in
+  let c1, (o11, o12, o13, o14) = mul1_add (r0, r1, r2, r3) f1 (o01, o02, o03, c0) in
+  let c2, (o22, o23, o24, o25) = mul1_add (r0, r1, r2, r3) f2 (o12, o13, o14, c1) in
+  let c3, (o33, o34, o35, o36)  = mul1_add (r0, r1, r2, r3) f3 (o23, o24, o25, c2) in
+  (*let out = (o00, o11, o22, o33, o34, o35, o36, o37) in *)
+  lemma_mul4 (as_nat4 (r0, r1, r2, r3)) (v f0) (v f1) (v f2) (v f3) (v c0) (v c1) (v c2) (v c3)
     (v o01) (v o02) (v o03) (v o12) (v o13) (v o14) (v o23) (v o24) (v o25) (v o34) (v o35) (v o36);
-  lemma_mul4_expand f r;
-  out
+  lemma_mul4_expand (f0, f1, f2, f3) (r0, r1, r2, r3); 
+  (o00, o11, o22, o33, o34, o35, o36, c3)

@@ -17,7 +17,7 @@ let prime:pos =
   pow2 256 - pow2 224 + pow2 192 + pow2 96 -1
 
 
-inline_for_extraction
+inline_for_extraction noextract
 let p256_prime_list : x:list uint64{List.Tot.length x == 4 /\ 
   (
     let open FStar.Mul in 
@@ -76,6 +76,8 @@ let felem_seq = lseq uint64 4
 
 inline_for_extraction
 let felem = lbuffer uint64 (size 4)
+inline_for_extraction 
+let widefelem = lbuffer uint64 (size 8)
 
 noextract
 let as_nat (h:mem) (e:felem) : GTot nat =
@@ -85,6 +87,21 @@ let as_nat (h:mem) (e:felem) : GTot nat =
   let s2 = s.[2] in
   let s3 = s.[3] in
   as_nat4 (s0, s1, s2, s3)
+
+
+noextract
+let wide_as_nat (h:mem) (e:widefelem) : GTot nat =
+  let s = as_seq h e in
+  let s0 = s.[0] in
+  let s1 = s.[1] in
+  let s2 = s.[2] in
+  let s3 = s.[3] in
+  let s4 = s.[4] in
+  let s5 = s.[5] in
+  let s6 = s.[6] in
+  let s7 = s.[7] in
+  wide_as_nat4 (s0, s1, s2, s3, s4, s5, s6, s7)
+
 
 
 noextract

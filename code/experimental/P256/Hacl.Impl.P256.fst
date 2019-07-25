@@ -1232,9 +1232,10 @@ let isPointAtInfinity p =
   z0_zero && z1_zero && z2_zero && z3_zero
 
 
+inline_for_extraction noextract
 val y_2: y: felem -> r: felem -> Stack unit
   (requires fun h -> as_nat h y < prime /\  live h y /\ live h r /\ eq_or_disjoint y r)
-  (ensures fun h0 _ h1 -> as_nat h1 r == toDomain_ ((as_nat h0 y) * (as_nat h0 y) % prime))
+  (ensures fun h0 _ h1 -> modifies1 r h0 h1 /\  as_nat h1 r == toDomain_ ((as_nat h0 y) * (as_nat h0 y) % prime))
 
 let y_2 y r = 
     let h0 = ST.get() in 
@@ -1245,16 +1246,50 @@ let y_2 y r =
     let h2 = ST.get() in 
     assert(as_nat h2 r == toDomain_ ((as_nat h0 y) *  (as_nat h0 y) % prime))
 
+inline_for_extraction noextract
 val upload_p256_point_on_curve_constant: x: felem -> Stack unit
   (requires fun h -> live h x)
-  (ensures fun h0 _ h1 -> modifies1 x h0 h1)
+  (ensures fun h0 _ h1 -> modifies1 x h0 h1 /\ 
+    as_nat h1 x == toDomain_ (41058363725152142129326129780047268409114441015993725554835256314039467401291) /\
+    as_nat h1 x < prime
+ )
 
-let upload_p256_point_on_curve_constant x = ()
+let upload_p256_point_on_curve_constant x = 
+  upd x (size 0) (u64 15608596021259845087);
+  upd x (size 1) (u64 12461466548982526096);
+  upd x (size 2) (u64 16546823903870267094);
+  upd x (size 3) (u64 15866188208926050356);
+    let h1 = ST.get() in 
+  assert_norm (
+    15608596021259845087 + 12461466548982526096 * pow2 64 + 
+    16546823903870267094 * pow2 64 * pow2 64 + 
+    15866188208926050356 * pow2 64 * pow2 64 * pow2 64 == (41058363725152142129326129780047268409114441015993725554835256314039467401291 * pow2 256) % prime);
+  assert(as_nat h1 x == toDomain_ (41058363725152142129326129780047268409114441015993725554835256314039467401291))
 
+val lemma_xcube: x_: nat {x_ < prime} -> Lemma 
+  (((x_ * x_ * x_ % prime) - (3 * x_ % prime)) % prime == (x_ * x_ * x_ - 3* x_) % prime)
 
+let lemma_xcube x_ = 
+  lemma_mod_add_distr (- (3 * x_ % prime)) (x_ * x_ * x_) prime;
+  lemma_mod_sub_distr (x_ * x_ * x_ ) (3 * x_) prime
+
+val lemma_xcube2: x_ : nat {x_ < prime} -> Lemma 
+  (toDomain_ ((((((x_ * x_ * x_) - (3 * x_)) % prime)) - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime) == 
+    toDomain_ ((x_ * x_ * x_ - 3 * x_ - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime))
+
+let lemma_xcube2 x_ = 
+  lemma_mod_add_distr (-41058363725152142129326129780047268409114441015993725554835256314039467401291) ((x_ * x_ * x_) - (3 * x_)) prime;
+  assert(((((x_ * x_ * x_) - (3 * x_)) % prime) - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime == (x_ * x_ * x_ - 3 * x_ - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime)
+
+inline_for_extraction noextract
 val xcube_minus_x: x: felem ->r: felem -> Stack unit 
   (requires fun h -> as_nat h x < prime /\ live h x  /\ live h r /\ eq_or_disjoint x r)
-  (ensures fun h0 _ h1 -> True)
+  (ensures fun h0 _ h1 -> 
+    modifies1 r h0 h1 /\
+    (
+      let x_ = as_nat h0 x in 
+      as_nat h1 r =  toDomain_((x_ * x_ * x_ - 3 * x_ - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime))
+  )
 
 let xcube_minus_x x r = 
   push_frame();
@@ -1268,28 +1303,79 @@ let xcube_minus_x x r =
   montgomery_multiplication_buffer xToDomainBuffer xToDomainBuffer r;
     let h2 = ST.get() in 
     assert(as_nat h2 r == toDomain_ ((as_nat h0 x) * (as_nat h0 x) % prime));
-  montgomery_multiplication_buffer xToDomainBuffer r r;
+  montgomery_multiplication_buffer r xToDomainBuffer r;
     let h3 = ST.get() in 
-    admit();
-  multByMinusThree xToDomainBuffer minusThreeXBuffer;
+    lemma_mod_mul_distr_l ((as_nat h0 x) * (as_nat h0 x)) (as_nat h0 x) prime;
+    assert(as_nat h3 r == toDomain_ ((as_nat h0 x) * (as_nat h0 x) * (as_nat h0 x) % prime));
+  multByThree xToDomainBuffer minusThreeXBuffer;
+    let h4 = ST.get() in 
+    assert(as_nat h4 minusThreeXBuffer == toDomain_ (3 * (as_nat h0 x) % prime));
   p256_sub r minusThreeXBuffer r;
+    let h5 = ST.get() in 
   upload_p256_point_on_curve_constant p256_constant;
+    let h6 = ST.get() in 
   p256_sub r p256_constant r;
+    let h7 = ST.get() in 
   pop_frame(); 
-  admit()
+  
+    let x_ = as_nat h0 x in 
+    assert_norm (41058363725152142129326129780047268409114441015993725554835256314039467401291 < prime);
+    lemma_xcube x_;
+    lemma_mod_add_distr 41058363725152142129326129780047268409114441015993725554835256314039467401291 ((x_ * x_ * x_) - (3 * x_)) prime;
+    lemma_xcube2 x_
+
+
+
+val lemma_modular_multiplication_p256_2: a: nat{a < prime} -> b: nat{b < prime} -> 
+  Lemma 
+  (a * pow2 256 % prime = b * pow2 256 % prime  <==> a == b)
+
+(*If k a ≡ k b (mod n) and k is coprime with n, then a ≡ b (mod n) *)
+(* if a ≡ b (mod n), then k a ≡ k b (mod n) for any integer k (compatibility with scaling) *)
+(*p = 2^256 - 2^224 + 2^192 + 2^96 - 1 
+
+gcd(2^256, p) = 1*)
+
+let lemma_modular_multiplication_p256_2 a b = admit()
+
+
+val lemma_modular_multiplication_p256_2_d: a: nat{a < prime} -> b: nat {b < prime} -> 
+  Lemma 
+    (toDomain_ a = toDomain_ b <==> a == b)
+
+let lemma_modular_multiplication_p256_2_d a b = 
+   lemmaToDomain a;
+     assert(toDomain_ a = a * pow2 256 % prime);
+   lemmaToDomain b;
+     assert(toDomain_ b = b * pow2 256 % prime);
+   lemma_modular_multiplication_p256_2 a b;
+     assert(toDomain_ a = toDomain_ b ==> a == b)
+
+
 
 
 let isPointOnCurve p = 
    push_frame();
      let y2Buffer = create (size 4) (u64 0) in 
      let xBuffer = create (size 4) (u64 0) in 
-     
+       let h0 = ST.get() in 
      let x = sub p (size 0) (size 4) in 
      let y = sub p (size 4) (size 4) in 
-     let yResult = y_2 y y2Buffer in 
-     let xResult = xcube_minus_x x xBuffer in 
-     let r = compare_felem yResult xResult in 
-     let r = eq #U64 r (u64 0) in 
-  pop_frame();   
-    r
+     y_2 y y2Buffer;
+     xcube_minus_x x xBuffer;
+       let h1 = ST.get() in 
+     let r = compare_felem y2Buffer xBuffer in 
+     let z = eq_0_u64 r in 
+
+     assert(if uint_v r = pow2 64 -1 then as_nat h1 y2Buffer == as_nat h1 xBuffer else as_nat h1 y2Buffer <> as_nat h1 xBuffer);
+     lemma_modular_multiplication_p256_2_d ((as_nat h0 y) * (as_nat h0 y) % prime) 
+       (let x_ = as_nat h0 x in (x_ * x_ * x_ - 3 * x_ - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime);
+     assert(let x_ = as_nat h0 x in 
+       if uint_v r = pow2 64 - 1 then   
+	  (as_nat h0 y) * (as_nat h0 y) % prime ==  (x_ * x_ * x_ - 3 * x_ - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime else 	  
+	  (as_nat h0 y) * (as_nat h0 y) % prime <>  (x_ * x_ * x_ - 3 * x_ - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime);
+       	
+     let z = not(eq_0_u64 r) in 
+     pop_frame();
+     z
 

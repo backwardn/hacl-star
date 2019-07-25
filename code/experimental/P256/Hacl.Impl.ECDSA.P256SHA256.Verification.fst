@@ -10,6 +10,7 @@ open Lib.Buffer
 open Hacl.Spec.P256.Definitions
 open Hacl.Impl.LowLevel
 open Hacl.Impl.P256
+open Hacl.Spec.P256.MontgomeryMultiplication
 
 val isCoordinateValid: p: lbuffer uint64 (size 12) -> Stack bool 
   (requires fun h -> live h p)
@@ -37,6 +38,16 @@ let isCoordinateValid p =
       pop_frame()  ; 
     lessX && lessY && lessZ
 
+val computeInverse: a: felem -> b: felem -> Stack unit
+  (requires fun h -> True)
+  (ensures fun h0 _ h1 -> True)
+
+let computeInverse a b = 
+  push_frame();
+    let temp = create (size 20) (u64 0) in 
+    clean_exponent a b temp;
+ pop_frame()   
+    
 
 
 val ecdsa_verification: 

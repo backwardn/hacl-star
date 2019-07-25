@@ -783,3 +783,13 @@ let exponent a result tempBuffer =
   big_power k ((pow2 32 - 1) * pow2 224) (pow2 192) ((pow2 94 -1 ) * pow2 2) 1;
   assert_norm(((pow2 32 - 1) * pow2 224 + pow2 192 + (pow2 94 -1 ) * pow2 2 + 1) = prime - 2)
 
+
+let clean_exponent a result tempBuffer = 
+  push_frame();
+    let temp1 = Lib.Buffer.create (size 4) (u64 0) in 
+    let one = Lib.Buffer.create (size 4) (u64 0) in 
+      Lib.Buffer.upd #_ #(size 4)  one (size 0) (u64 1);
+    montgomery_multiplication_buffer one a temp1;
+    exponent temp1 result tempBuffer; 
+
+  pop_frame()  
