@@ -7,6 +7,7 @@ module ST = FStar.HyperStack.ST
 open Lib.IntTypes
 open Lib.Buffer
 
+open FStar.Math.Lemmas
 
 open Hacl.Spec.P256.Lemmas
 open Hacl.Spec.P256.Definitions
@@ -321,14 +322,24 @@ let lemma_montgomery_mult_result_less_than_prime a b k0 =
   assert(tU <=  (pow2 64 * prime +  (pow2 64 * prime +  (pow2 64 * prime +  (pow2 64 * prime +  prime * prime + 1) / pow2 64) / pow2 64) / pow2 64) / pow2 64);
   assert_norm ((pow2 64 * prime +  (pow2 64 * prime +  (pow2 64 * prime +  (pow2 64 * prime +  prime * prime + 1) / pow2 64) / pow2 64) / pow2 64) / pow2 64 < 2 * prime);
   assert(tU < 2 * prime)
-  
+
+
+
+val montgomery_multiplication_one_round_proof: t: int ->k0: int ->  round: nat {round = (t + prime * (k0 * (t % pow2 64)) % pow2 64) / pow2 64} -> co: nat {co % prime = t % prime} -> 
+  Lemma (round  % prime == co * (modp_inv2 (pow2 64) prime) % prime )
+
+let montgomery_multiplication_one_round_proof t k0 round co = 
+  let round0 = (t + prime * (k0 * (t % pow2 64) % pow2 64)) in 
+  modulo_addition_lemma t prime (k0 * (t % pow2 64) % pow2 64);
+  assert(round0 % prime == co % prime)
+
 
 
 val montgomery_multiplication_round: t: widefelem ->  round: widefelem -> k0: felem -> primeBuffer: lbuffer uint64 (size 4)  ->
   Stack unit 
     (requires fun h -> live h t /\ live h round /\ live h k0 /\ live h primeBuffer /\ as_nat h primeBuffer == prime /\
       wide_as_nat h t < prime * prime)
-    (ensures fun h0 _ h1 -> modifies1 round h0 h1 /\ wide_as_nat h1 round = (wide_as_nat h0 t + prime * ((as_nat h0 k0) * (wide_as_nat h0 t % pow2 64) % pow2 64)) / pow2 64
+    (ensures fun h0 _ h1 -> modifies1 round h0 h1 /\ wide_as_nat h1 round = (wide_as_nat h0 t + prime * ((as_nat h0 k0) * (wide_as_nat h0 t % pow2 64) % pow2 64) ) / pow2 64
     )
 
 

@@ -145,20 +145,86 @@ let lemma_division_is_multiplication t3 =
   lemma_mod_twice remainder prime
 
 
+#reset-options " --z3rlimit 300 --z3refresh" 
+
+val lemma_reduce_mod_by_sub: t: nat -> Lemma
+    ((t - t % pow2 64) % pow2 64 == 0)
+
+let lemma_reduce_mod_by_sub t = ()
+
+val lemma_multiplication_same_number2: a: int -> b: int -> c: int{a * b = c} -> d: int -> Lemma
+    (a * b * d == c* d) 
+
+let lemma_multiplication_same_number2 a b c d = ()
+
+assume val lemma_add_mod: a: nat -> b: nat -> c: nat -> d: nat -> e: nat -> f: nat {f = a - b + c + d - e} -> k: pos -> 
+  Lemma (
+    f % k == ((a % k) - (b % k) + ( c % k) + (d % k) - (e % k)) % k)
+
+
+val lemma_reduce_mod_by_sub2: t: nat -> 
+  Lemma ((prime * (t % pow2 64)) % pow2 64 == (-t)  % pow2 64)
+
+let lemma_reduce_mod_by_sub2 t = 
+  let t_ = t % pow2 64 in   
+  let f = (pow2 256 - pow2 224 + pow2 192 + pow2 96 -1) * (t % pow2 64) in 
+  assert(f == pow2 256 * t_ - pow2 224 * t_ + pow2 192 * t_ + pow2 96 * t_ - t_);
+  lemma_add_mod (pow2 256 * t_) (pow2 224 * t_) (pow2 192 * t_) (pow2 96 * t_) t_ f (pow2 64);
+  assert(f % (pow2 64) ==  ((pow2 256 * t_) % pow2 64 -  (pow2 224 * t_) % pow2 64 +  (pow2 192 * t_) % pow2 64 +  (pow2 96 * t_) % pow2 64 -  t_) % pow2 64);
+
+    pow2_plus 192 64;
+    lemma_multiplication_same_number2 (pow2 192) (pow2 64) (pow2 256) t_;
+    multiple_modulo_lemma (pow2 192 * t_) (pow2 64);
+    assert((pow2 256 * t_) % pow2 64 == 0);
+
+    pow2_plus 160 64;
+    lemma_multiplication_same_number2 (pow2 160) (pow2 64) (pow2 224) t_;
+    multiple_modulo_lemma (pow2 160 * t_) (pow2 64);
+    assert((pow2 224 * t_) % pow2 64 == 0);
+
+    pow2_plus 128 64;
+    lemma_multiplication_same_number2 (pow2 128) (pow2 64) (pow2 192) t_;
+    multiple_modulo_lemma (pow2 128 * t_) (pow2 64);
+    assert((pow2 192 * t_) % pow2 64 == 0);
+
+    pow2_plus 32 64; 
+    assert(pow2 32 * pow2 64 = pow2 96);
+
+    lemma_multiplication_same_number2 (pow2 32) (pow2 64) (pow2 96) t_; 
+    multiple_modulo_lemma (pow2 32 * t_) (pow2 64);
+    assert((pow2 96 * t_) % pow2 64 == 0);
+
+  assert(f % pow2 64 == (- (t % pow2 64)) % pow2 64);
+  lemma_mod_sub_distr 0 t (pow2 64);
+  assert(f % pow2 64 == (- t) % pow2 64)
+
+val lemma_reduce_mod_by_sub3 : t: nat -> Lemma ((t + (t % pow2 64) * prime) % pow2 64 == 0)
+
+let lemma_reduce_mod_by_sub3 t = 
+  lemma_reduce_mod_by_sub2 t
+
 val mult_one_round: t: nat -> co: nat{t % prime == co% prime}  -> Lemma
-(requires True)
-(ensures (let result = (t + (t % pow2 64) * prime) / pow2 64 % prime in result == (co * modp_inv2 (pow2 64)) % prime))
+(let result = (t + (t % pow2 64) * prime) / pow2 64 % prime in result == (co * modp_inv2 (pow2 64)) % prime)
 
 let mult_one_round t co = 
     let t1 = t % pow2 64 in 
     let t2 = t1 * prime in 
     let t3 = t + t2 in 
+      modulo_addition_lemma t prime (t % pow2 64);
       assert(t3 % prime = co % prime);
-    let t = t3 / pow2 64 in 
+      lemma_div_mod t3 (pow2 64);
+      lemma_reduce_mod_by_sub3 t;
+      assert(t3 % pow2 64 == 0);
       assert(let rem = t3/ pow2 64 in rem * pow2 64 = t3);
       assert(exists (k: nat). k * pow2 64 = t3);
       lemma_division_is_multiplication t3;
-      lemma_multiplication_to_same_number t3 co (modp_inv2 (pow2 64))
+      lemma_multiplication_to_same_number t3 co (modp_inv2 (pow2 64)) 
+
+
+val mult_one_round_ecdsa_prime: t: nat -> pr: nat -> co: nat {t % prime == co % prime} -> k0: nat -> Lemma
+  (let result = (t + prime * (k0 * (t % pow2 64)) % pow2 64) / pow2 64 in result == (co * modp_inv2 (pow2 54)) % prime)
+
+
 
 
 val lemma_decrease_pow: a: nat -> Lemma (ensures (a * modp_inv2 (pow2 64) * modp_inv2 (pow2 64) * modp_inv2 (pow2 64) * modp_inv2 (pow2 64))  % prime == (a * modp_inv2 (pow2 256)) % prime) 
