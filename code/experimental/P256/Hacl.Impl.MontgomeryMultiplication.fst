@@ -190,14 +190,6 @@ let shift8 t out =
   upd out (size 7) (u64 0)
 
 
-let modp_inv (prime: pos {prime > 3}) (x: nat {x < prime}) : Tot (r: nat{r < prime}) = 
-	(x **% (prime - 2)) % prime
-
-let modp_inv2 (x: int) (p: nat {p > 3}) : Tot (r: nat {r < p}) = 
-  assert_norm (prime > 0);
-  let r = x % p in 
-  modp_inv p r
-
 
 private let add_l (a: nat) (b: nat) (c: nat) (d: nat) : Lemma (requires a < c /\ b < d) (ensures (a + b < c + d)) = ()
 private let mul_lemma_1 (a: nat) (c: nat) (b: pos) : Lemma (requires (a < c)) (ensures (a * b < c * b)) = ()

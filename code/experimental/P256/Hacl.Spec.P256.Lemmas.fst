@@ -52,24 +52,26 @@ let ( *% ) a b = (a * b) % prime
 
 val ( **% ) : e: nat -> n: nat{n > 0} -> Tot (r: nat) (decreases n)
 
-let rec ( **% ) e n =
-  if n = 1 then e
-  else
-    if n % 2 = 0 then 
-    begin
-     	(e *% e) **% (n / 2)
-    end
-    else e *% ((e *% e) **% ((n-1)/2))
+let ( **%) e n = 
+  pow e n % prime
+
+
+let modp_inv_prime (prime: pos {prime > 3}) (x: nat {x < prime}) : Tot (r: nat{r < prime}) = 
+  (x **% (prime - 2)) % prime
+
+let modp_inv2_prime (x: int) (p: nat {p > 3}) : Tot (r: nat {r < p}) = 
+  assert_norm (prime > 0);
+  let r = x % p in  
+  modp_inv_prime p r
 
 
 let modp_inv (x: nat {x < prime}) : Tot (r: nat{r < prime}) = 
-	(x **% (prime - 2)) % prime
-
+  assert_norm (prime > 3);
+  modp_inv_prime prime x
 
 let modp_inv2 (x: nat) : Tot (r: nat {r < prime}) = 
-  assert_norm (prime > 0);
-  let r = x % prime in 
-  modp_inv r
+  assert_norm (prime > 3);
+  modp_inv2_prime x prime
 
 
 #reset-options "--max_fuel 0 --z3rlimit 100" 
@@ -128,21 +130,47 @@ let modulo_distributivity_mult_last_two a b c d e f = admit()
 val lemma_mod_twice : a:int -> p:pos -> Lemma ((a % p) % p == a % p)
 let lemma_mod_twice a p = lemma_mod_mod (a % p) a p
 
-val lemma_multiplication_to_same_number: a: nat -> b: nat ->c: nat ->  
+
+val lemma_multiplication_to_same_number: a: nat -> b: nat ->c: nat -> prime: pos ->  
   Lemma (requires (a % prime = b % prime)) (ensures ((a * c) % prime = (b * c) % prime))
 
-let lemma_multiplication_to_same_number a b c = 
+let lemma_multiplication_to_same_number a b c prime = 
   lemma_mod_mul_distr_l a c prime;
   lemma_mod_mul_distr_l b c prime
 
-val lemma_division_is_multiplication: t3: nat{ exists (k: nat) . k * pow2 64 = t3} -> Lemma (ensures (t3 * modp_inv2 (pow2 64) % prime = (t3 / pow2 64) % prime))
 
-let lemma_division_is_multiplication t3 =  
-  let t_new = t3 * modp_inv2 (pow2 64) % prime in 
+val lemma_division_is_multiplication: t3: nat{ exists (k: nat) . k * pow2 64 = t3} -> prime_: pos {prime_ > 3 /\
+  (prime_ = 115792089210356248762697446949407573529996955224135760342422259061068512044369 \/ prime_ = prime)} ->   
+  Lemma (ensures (t3 * modp_inv2_prime (pow2 64) prime_  % prime_ = (t3 / pow2 64) % prime_))
+
+
+let lemma_division_is_multiplication t3 prime_ =  
+  let open FStar.Tactics in 
+  let open FStar.Tactics.Canon in 
   let remainder = t3 / pow2 64 in 
-  assert_norm(modp_inv2 (pow2 64) * pow2 64 % prime = 1);
-  modulo_distributivity_mult remainder (modp_inv2 (pow2 64) * pow2 64) prime;
-  lemma_mod_twice remainder prime
+  (*
+  SAGE: 
+    prime = 2** 256 - 2** 224 + 2** 192 + 2** 96 -1
+    inverse_mod ((2 ** 64), prime) * 2 ** 64 % prime
+    1;
+
+    prime = 115792089210356248762697446949407573529996955224135760342422259061068512044369
+    inverse_mod ((2 ** 64), prime) * 2 ** 64 % prime
+  
+  *)
+  assert_norm(prime > 3);
+  let prime2 = 115792089210356248762697446949407573529996955224135760342422259061068512044369 in 
+  assume(modp_inv2_prime (pow2 64) prime * pow2 64 % prime = 1); 
+  assume(modp_inv2_prime (pow2 64) prime2 * pow2 64 % prime2 = 1);
+
+  let k =  (modp_inv2_prime (pow2 64) prime_ * pow2 64) in 
+  
+  modulo_distributivity_mult remainder k prime_;
+  assert((remainder * k) % prime_ = ((remainder % prime_)) % prime_);
+  lemma_mod_twice remainder prime_;
+    assert_by_tactic (t3 / pow2 64 * (modp_inv2_prime (pow2 64) prime_ * pow2 64) == t3/ pow2 64 * pow2 64 * modp_inv2_prime (pow2 64) prime_) canon;
+  assert((t3 / pow2 64 * (modp_inv2_prime (pow2 64) prime_ * pow2 64)) % prime_ = remainder % prime_);
+  assert((t3  * modp_inv2_prime (pow2 64) prime_) % prime_ = remainder % prime_)
 
 
 #reset-options " --z3rlimit 300 --z3refresh" 
@@ -202,6 +230,7 @@ val lemma_reduce_mod_by_sub3 : t: nat -> Lemma ((t + (t % pow2 64) * prime) % po
 
 let lemma_reduce_mod_by_sub3 t = 
   lemma_reduce_mod_by_sub2 t
+  
 
 val mult_one_round: t: nat -> co: nat{t % prime == co% prime}  -> Lemma
 (let result = (t + (t % pow2 64) * prime) / pow2 64 % prime in result == (co * modp_inv2 (pow2 64)) % prime)
@@ -217,14 +246,66 @@ let mult_one_round t co =
       assert(t3 % pow2 64 == 0);
       assert(let rem = t3/ pow2 64 in rem * pow2 64 = t3);
       assert(exists (k: nat). k * pow2 64 = t3);
-      lemma_division_is_multiplication t3;
-      lemma_multiplication_to_same_number t3 co (modp_inv2 (pow2 64)) 
+      assert_norm (prime > 3);
+      lemma_division_is_multiplication t3 prime;
+      lemma_multiplication_to_same_number t3 co (modp_inv2 (pow2 64)) prime
 
+val lemma_reduce_mod_ecdsa_prime:
+  prime : nat {prime = 115792089210356248762697446949407573529996955224135760342422259061068512044369} ->
+  t: nat -> k0: nat {k0 = modp_inv2_prime (-prime) (pow2 64)} ->  
+  Lemma
+    ((t + prime * (k0 * (t % pow2 64) % pow2 64)) % pow2 64 == 0)
+    
 
-val mult_one_round_ecdsa_prime: t: nat -> pr: nat -> co: nat {t % prime == co % prime} -> k0: nat -> Lemma
-  (let result = (t + prime * (k0 * (t % pow2 64)) % pow2 64) / pow2 64 in result == (co * modp_inv2 (pow2 54)) % prime)
+let lemma_reduce_mod_ecdsa_prime prime t k0 = 
+    let open FStar.Tactics in 
+    let open FStar.Tactics.Canon in 
+  
+  let f = prime * (k0 * (t % pow2 64) % pow2 64) in 
+  let t0 = (t + f) % pow2 64 in 
+  lemma_mod_add_distr t f (pow2 64);
+  
+  modulo_addition_lemma t (pow2 64) f;
+  assert(t0 == (t + f % pow2 64) % pow2 64);
+  lemma_mod_mul_distr_r k0 t (pow2 64);
+    assert(k0 * (t % pow2 64) % pow2 64 = (k0 * t) % pow2 64);
+  lemma_mod_mul_distr_r prime (k0 * t) (pow2 64);
+    assert((prime * (k0 * (t % pow2 64) % pow2 64)) % pow2 64 == (prime * (k0 * t)) % pow2 64);
+    assert_by_tactic(prime * (k0 * t) == (prime * k0) * t) canon;
+    assert((prime * (k0 * (t % pow2 64) % pow2 64)) % pow2 64 == ((prime * k0) * t) % pow2 64);
+    lemma_mod_mul_distr_l (prime * k0) t (pow2 64); 
+      (*
+       SAGE: 
+       prime = 115792089210356248762697446949407573529996955224135760342422259061068512044369
+       inverse_mod (- prime, 2 ** 64) * prime % 2 ** 64  == (-1) % 2** 64	*)
+       assume((prime * k0) % pow2 64 == (-1) % pow2 64);  
+    assert((prime * (k0 * (t % pow2 64) % pow2 64)) % pow2 64 == ((-1) % pow2 64 * t) % pow2 64);
+    lemma_mod_mul_distr_l (-1) t (pow2 64);
+    assert(f % pow2 64 == (-t) % pow2 64);
 
+    assert((t + f) % pow2 64 == (t + (- t % pow2 64)) % pow2 64);
+    lemma_mod_add_distr t (-t) (pow2 64);
+    assert((t + f) % pow2 64 == 0)
+  
 
+val mult_one_round_ecdsa_prime: t: nat -> 
+  prime: pos {prime = 115792089210356248762697446949407573529996955224135760342422259061068512044369} -> 
+  co: nat {t % prime == co % prime} -> k0: nat {k0 = modp_inv2_prime (-prime) (pow2 64)} -> Lemma
+  (let result = (t + prime * ((k0 * (t % pow2 64)) % pow2 64)) / pow2 64 in 
+    result % prime == (co * modp_inv2_prime (pow2 64) prime) % prime)
+
+let mult_one_round_ecdsa_prime t prime co k0 = 
+  assert_norm (prime > 3);
+  let t2 = ((k0 * (t % pow2 64)) % pow2 64) * prime in 
+  let t3 = t + t2 in 
+    modulo_addition_lemma t prime ((k0 * (t % pow2 64)) % pow2 64);
+    assert(t3 % prime = co % prime);
+    lemma_div_mod t3 (pow2 64);
+    lemma_reduce_mod_ecdsa_prime prime t k0;
+    assert(let rem = t3/ pow2 64 in rem * pow2 64 = t3);
+    assert(exists (k: nat). k * pow2 64 = t3);
+    lemma_division_is_multiplication t3 prime;
+    lemma_multiplication_to_same_number t3 co (modp_inv2_prime (pow2 64) prime) prime
 
 
 val lemma_decrease_pow: a: nat -> Lemma (ensures (a * modp_inv2 (pow2 64) * modp_inv2 (pow2 64) * modp_inv2 (pow2 64) * modp_inv2 (pow2 64))  % prime == (a * modp_inv2 (pow2 256)) % prime) 
