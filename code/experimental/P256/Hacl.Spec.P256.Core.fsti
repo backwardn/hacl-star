@@ -32,7 +32,17 @@ val upload_prime: unit -> Tot (r: felem4 {as_nat4 r = prime})
 
 inline_for_extraction noextract 
 val shift_256: c: felem4 -> Tot (r: felem8{wide_as_nat4 r = as_nat4 c * pow2 256})
- 
+
+inline_for_extraction noextract
+val add8: a: felem8 -> b: felem8 -> Pure (felem9)
+  (requires True) 
+  (ensures fun r -> let c, o0, o1, o2, o3, o4, o5, o6, o7 = r in 
+    uint_v c <= 1 /\  wide_as_nat4 a + wide_as_nat4 b = wide_as_nat4 (o0, o1, o2, o3, o4, o5, o6, o7) + uint_v c * pow2 512)
+
+
+inline_for_extraction noextract
+val add8_without_carry1: a: felem8{wide_as_nat4 a < pow2 449} -> b: felem8 {wide_as_nat4 b < pow2 320} -> Tot (r: felem8 {wide_as_nat4 r = wide_as_nat4 a + wide_as_nat4 b})
+
 inline_for_extraction noextract
 val montgomery_multiplication: a: felem4 {as_nat4 a < prime} -> b: felem4{as_nat4 b < prime}  -> 
   Tot (result: felem4 {as_nat4 result = as_nat4 a * as_nat4 b * modp_inv2 (pow2 256) % prime})

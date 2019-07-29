@@ -301,11 +301,6 @@ let lemma_wide o =
     assert_norm(pow2 64 * pow2 64 * pow2 64  * pow2 64 * pow2 64* pow2 64 * pow2 64 = pow2 (7 * 64));
     ()
 
-inline_for_extraction noextract
-val add8: a: felem8 -> b: felem8 -> Pure (felem9)
-  (requires True) 
-  (ensures fun r -> let c, o0, o1, o2, o3, o4, o5, o6, o7 = r in 
-    uint_v c <= 1 /\  wide_as_nat4 a + wide_as_nat4 b = wide_as_nat4 (o0, o1, o2, o3, o4, o5, o6, o7) + uint_v c * pow2 512)
 
 let add8  (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7) = 
     assert_norm(pow2 64 * pow2 64 = pow2 128);
@@ -327,8 +322,10 @@ let add8  (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7) =
   (c7, o0, o1, o2, o3, o4, o5, o6, o7)
 
 
+ 
 inline_for_extraction noextract
-val add8_without_carry: a: felem8{wide_as_nat4 a < pow2 449} -> b: felem8 {wide_as_nat4 b < pow2 320} -> Tot (r: felem8 {wide_as_nat4 r = wide_as_nat4 a + wide_as_nat4 b})
+val add8_without_carry: a: felem8 {wide_as_nat4 a < prime * prime} -> b: felem8 {wide_as_nat4 b < pow2 320}  -> Tot (r:felem8 {wide_as_nat4 r = wide_as_nat4 a + wide_as_nat4 b})
+
 
 let add8_without_carry (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7) = 
   let (carry, r0, r1, r2, r3, r4, r5, r6, r7)  = add8 (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7) in 
@@ -351,9 +348,6 @@ let lemma_add a b =
     assert(uint_v carry = 0);
     assert(wide_as_nat4 (r0, r1, r2, r3, r4, r5, r6, r7) = wide_as_nat4 a  + wide_as_nat4 b)
 
-
-inline_for_extraction noextract
-val add8_without_carry1: a: felem8 {wide_as_nat4 a < prime * prime} -> b: felem8 {wide_as_nat4 b < pow2 320}  -> Tot (r:felem8 {wide_as_nat4 r = wide_as_nat4 a + wide_as_nat4 b})
 
 let add8_without_carry1 (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7) =
   let (carry, r0, r1, r2, r3, r4, r5, r6, r7)  = add8 (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7) in 
