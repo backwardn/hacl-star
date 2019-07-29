@@ -32,16 +32,6 @@ let lemma_enough_to_carry a b =
   else
   ()
 
-
-let rec ( **% ) e n =
-  if n = 1 then e
-  else
-    if n % 2 = 0 then 
-    begin
-      (e *% e) **% (n / 2)
-    end
-    else e *% ((e *% e) **% ((n-1)/2))
-
 #reset-options "--max_fuel 0 --z3rlimit 100" 
 
 

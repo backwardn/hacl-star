@@ -30,25 +30,36 @@ val lemma_enough_to_carry: a: felem4 -> b: felem4 -> Lemma (
     let (c, r) = add4 a b in 
     uint_v c == 1
     else True)
-   
+
+
 noextract   
 let ( +% ) a b = (a + b) % prime
 noextract
 let ( -% ) a b = (a - b) % prime
 noextract
-let ( *% ) a b = (a * b) % prime
+let ( *% ) a b prime = (a * b) % prime
+
 
 noextract
-val ( **% ) : e: nat -> n: nat{n > 0} -> Tot (r: nat) (decreases n)
+let rec exp (e: nat) (n:nat {n > 0}) (prime: pos) : Tot (r: nat) (decreases n)  =
+  let ( *%) a b =  ( *% ) a b prime in 
+
+  if n = 1 then e
+  else
+    if n % 2 = 0 then 
+    begin
+      exp (e *% e) (n/2) prime
+    end
+    else e *% (exp (e *% e)((n-1)/2) prime)
+
+noextract 
+let modp_inv_prime (prime: pos {prime > 3}) (x: nat {x < prime})  : Tot (r: nat{r < prime}) = 
+  (exp x (prime - 2) prime) % prime
 
 noextract
-let modp_inv_prime (prime: pos {prime > 3}) (x: nat {x < prime}) : Tot (r: nat{r < prime}) = 
-  (x **% (prime - 2)) % prime
-
-noextract
-let modp_inv2_prime (x: int) (p: nat {p > 3}) : Tot (r: nat {r < p}) = 
+let modp_inv2_prime (x: nat) (p: nat {p > 3}) : Tot (r: nat {r < p}) = 
   assert_norm (prime > 0);
-  let r = x % p in  
+  let r:nat = x % p in  
   modp_inv_prime p r
 
 noextract

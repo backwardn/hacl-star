@@ -361,29 +361,36 @@ let montgomery_multiplication_round t round k0 primeBuffer =
 
 
 inline_for_extraction noextract
-val reduction_prime_2prime_with_carry_impl: cin: uint64 -> x: felem -> result: felem -> primeBuffer: felem -> 
+val reduction_prime_2prime_with_carry_impl_5: x: widefelem -> result: felem -> primeBuffer: felem -> 
   Stack unit 
     (requires fun h -> live h x /\ live h result /\  eq_or_disjoint x result /\ live h primeBuffer /\
-      (as_nat h primeBuffer == prime) /\ 
-      (let x = as_seq h x in  felem_seq_as_nat x + uint_v cin * pow2 256) < 2 * prime)
-    (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ 
-      (
-	let r = as_seq h1 result in 
-	let x = as_seq h0 x in 
-	felem_seq_as_nat r = (felem_seq_as_nat x + uint_v cin * pow2 256) % prime
-      )
-    )  
+      (as_nat h primeBuffer == prime) /\ wide_as_nat h x < 2 * prime)
+    (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ as_nat h1 result = wide_as_nat h0 x % prime)  
 
 
-let reduction_prime_2prime_with_carry_impl cin x result primeBuffer  = 
+let reduction_prime_2prime_with_carry_impl_5 x result primeBuffer  = 
   push_frame();
     let tempBuffer = create (size 4) (u64 0) in 
     let tempBufferForSubborrow = create (size 1) (u64 0) in 
+    let cin = Lib.Buffer.index x (size 4) in 
+    let x = Lib.Buffer.sub x (size 0) (size 4) in 
     let c = Hacl.Impl.LowLevel.sub4 x primeBuffer tempBuffer in
     let carry = sub_borrow c cin (u64 0) tempBufferForSubborrow in 
     assert(if uint_v cin > 0 then uint_v carry == 0 else if uint_v c = 0 then uint_v carry = 0 else uint_v carry = 1);
     cmovznz4 carry tempBuffer x result;
  pop_frame()   
+
+val lemma_montgomery_mult_2: a: nat{a < prime} -> b: nat{b < prime} -> 
+  Lemma (
+    (a * b * modp_inv2_prime (pow2 64) prime  * 
+      modp_inv2_prime (pow2 64) prime  *
+      modp_inv2_prime (pow2 64) prime *
+      modp_inv2_prime (pow2 64) prime) % prime == (a * b * modp_inv2_prime (pow2 256) prime) % prime)
+
+
+let lemma_montgomery_mult_2 a b = 
+    assert_norm (prime > 3);
+    assert(modp_inv2_prime (pow2 64) prime  == 92642477083479937529731757477833778746952469466660261742446881162473064518108); admit()
 
 
 
@@ -398,20 +405,30 @@ let upload_ecdsa_prime p =
   upd p (size 2) (u64 18446744073709551615);
   upd p (size 3) (u64 18446744069414584320)
 
-val upload_k0: unit ->  uint64
+val upload_k0: unit ->  Tot (r: uint64 {uint_v r == modp_inv2_prime (-prime) (pow2 64)})
 
-let upload_k0 () = (u64 14758798090332847183)
+let upload_k0 () = 
+  (* 
+  SAGE: 
   
+  prime = 115792089210356248762697446949407573529996955224135760342422259061068512044369
+  inverse_mod(884452912994769583, 2**64)
 
+     14758798090332847183  
+  *)
+  assume ((884452912994769583 **% ((pow2 64) -2)) % (pow2 64) == 14758798090332847183);
+  (u64 14758798090332847183)
+  
 
 val montgomery_multiplication_ecdsa_module: a: felem -> b: felem ->result: felem -> 
   Stack unit 
-    (requires fun h -> live h a /\ live h b /\ live h result)
-    (ensures fun h0 _ h1 -> True)
+    (requires fun h -> live h a /\ live h b /\ live h result /\ as_nat h a < prime /\ as_nat h b < prime)
+    (ensures fun h0 _ h1 -> modifies1 result h0 h1 )
 
 
 let montgomery_multiplication_ecdsa_module a b  result =
   push_frame();
+    let h0 = ST.get() in 
     let t = create (size 8) (u64 0) in 
     let primeBuffer = create (size 4) (u64 0) in 
     let round1 = create (size 8) (u64 0) in 
@@ -419,15 +436,42 @@ let montgomery_multiplication_ecdsa_module a b  result =
     let round3 = create (size 8) (u64 0) in 
     let round4 = create (size 8) (u64 0) in 
 
-    upload_ecdsa_prime primeBuffer;
-    let k0 = upload_k0 () in 
-
+      upload_ecdsa_prime primeBuffer;
+      let k0 = upload_k0 () in 
+      
+      let h0 = ST.get() in 
+      
     mul a b t;
+      let h1 = ST.get() in 
+      mul_lemma_ (as_nat h0 a) (as_nat h0 b) prime;
+      assert(wide_as_nat h1 t < prime * prime);
 
-    montgomery_multiplication_round t round1 k0 primeBuffer; admit();
+    montgomery_multiplication_round t round1 k0 primeBuffer; 
+	let h2 = ST.get() in 
+	montgomery_multiplication_one_round_proof (wide_as_nat h1 t) (uint_v k0) (wide_as_nat h2 round1) (as_nat h0 a * as_nat h0 b);
+	assert(wide_as_nat h2 round1 % prime == (as_nat h0 a * as_nat h0 b * modp_inv2_prime (pow2 64) prime) % prime);
+
+
     montgomery_multiplication_round round1 round2 k0 primeBuffer;
+	let h3 = ST.get() in 
+	montgomery_multiplication_one_round_proof (wide_as_nat h2 round1) (uint_v k0) (wide_as_nat h3 round2) (as_nat h0 a * as_nat h0 b * modp_inv2_prime (pow2 64) prime);
+
+
+
     montgomery_multiplication_round round2 round3 k0 primeBuffer;
+      	let h4 = ST.get() in 
+	montgomery_multiplication_one_round_proof (wide_as_nat h3 round2) (uint_v k0) (wide_as_nat h4 round3) (as_nat h0 a * as_nat h0 b * modp_inv2_prime (pow2 64) prime * modp_inv2_prime (pow2 64) prime);
+
+
     montgomery_multiplication_round round3 round4 k0 primeBuffer;
-    
-    reduction_prime_2prime_with_carry_impl (index round4 (size 4)) round4 result primeBuffer;
+	let h5 = ST.get() in 
+	montgomery_multiplication_one_round_proof (wide_as_nat h4 round3) (uint_v k0) (wide_as_nat h5 round4) (as_nat h0 a * as_nat h0 b * modp_inv2_prime (pow2 64) prime * modp_inv2_prime (pow2 64) prime * modp_inv2_prime (pow2 64) prime);
+
+	assert(wide_as_nat h5 round4 % prime == (as_nat h0 a * as_nat h0 b
+	  * modp_inv2_prime (pow2 64) prime  * modp_inv2_prime (pow2 64) prime  * modp_inv2_prime (pow2 64) prime * modp_inv2_prime (pow2 64) prime ) % prime);  
+
+
+	lemma_montgomery_mult_result_less_than_prime (as_nat h0 a) (as_nat h0 b) (uint_v k0);
+	assert(wide_as_nat h5 round4 < 2 * prime);
+    reduction_prime_2prime_with_carry_impl round4 result primeBuffer;
     pop_frame()
