@@ -17,6 +17,7 @@ open Hacl.Spec.P256.Core
 
 open FStar.Mul
 
+let prime = prime_p256_order
 
 #reset-options "--z3refresh --z3rlimit 200"
 inline_for_extraction noextract
@@ -483,12 +484,25 @@ val toDomain_: a: nat -> Tot nat
 let toDomain_ a = (a * pow2 256) % prime_p256_order 
 
 
+assume val lemmaFromDomainToDomain: a: nat { a < prime} -> Lemma (toDomain_ (fromDomain_ a) == a)
+
+assume val multiplicationInDomain: #k: nat -> #l: nat -> 
+  a: nat {a == toDomain_ (k) /\  a < prime} -> 
+  b: nat {b == toDomain_ (l) /\ b < prime} -> Lemma 
+    (a *  b * modp_inv2_prime (pow2 256) prime == toDomain_ (k * l))
+    
+assume val inDomain_mod_is_not_mod: a: nat -> Lemma (toDomain_ a == toDomain_ (a % prime))
+
+
 val montgomery_multiplication_ecdsa_module: a: felem -> b: felem ->result: felem-> 
   Stack unit 
     (requires fun h -> live h a /\ live h b /\ live h result /\
       as_nat h a < prime_p256_order /\ as_nat h b < prime_p256_order)
-    (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ as_nat h1 result = (as_nat h0 a * as_nat h0 b * modp_inv2_prime (pow2 256) prime_p256_order) % prime_p256_order /\ 
-      as_nat h1 result = fromDomain_(as_nat h0 a * as_nat h0 b) )
+    (
+      ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ as_nat h1 result = (as_nat h0 a * as_nat h0 b * modp_inv2_prime (pow2 256) prime_p256_order) % prime_p256_order /\ 
+      as_nat h1 result = fromDomain_(as_nat h0 a * as_nat h0 b) /\
+      as_nat h1 result = toDomain_ (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime)
+    )
 
 
 let montgomery_multiplication_ecdsa_module a b result =
@@ -521,4 +535,10 @@ let montgomery_multiplication_ecdsa_module a b result =
       let h4 = ST.get() in 
       assert(as_nat h4 result == wide_as_nat h3 round4 % prime_p256_order);
      assert(as_nat  h4 result == (as_nat h0 a * as_nat h0 b  * modp_inv2_prime (pow2 256) prime_p256_order) % prime_p256_order); 
+
+     lemmaFromDomainToDomain (as_nat h0 a);
+     lemmaFromDomainToDomain (as_nat h0 b);
+     multiplicationInDomain #(fromDomain_ (as_nat h0 a)) #(fromDomain_ (as_nat h0 b)) (as_nat h0 a)(as_nat h0 b);
+     inDomain_mod_is_not_mod (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b));
+
     pop_frame()

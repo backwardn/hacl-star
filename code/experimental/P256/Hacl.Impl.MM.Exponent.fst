@@ -81,8 +81,14 @@ inline_for_extraction noextract
 val montgomery_ladder_exponent_step0: a: felem -> b: felem -> Stack unit
   (requires fun h -> live h a /\ live h b /\ as_nat h a < prime /\ as_nat h b < prime /\ disjoint a b )
   (ensures fun h0 _ h1 -> modifies2 a b h0 h1 /\ as_nat h1 a < prime /\ as_nat h1 b < prime /\
-    as_nat h1 b == fromDomain_ (as_nat h0 a * as_nat h0 b) /\
-    as_nat h1 a == fromDomain_ (as_nat h0 a * as_nat h0 a)
+    (*as_nat h1 b == fromDomain_ (as_nat h0 a * as_nat h0 b) /\
+    as_nat h1 a == fromDomain_ (as_nat h0 a * as_nat h0 a) /\
+*)
+    let a = fromDomain_ (as_nat h0 a) in 
+    let b = fromDomain_ (as_nat h0 b) in 
+    let (r0D, r1D) = exp_step0 a b in 
+    r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b)  
+
   )
 
 let montgomery_ladder_exponent_step0 a b = 
@@ -119,10 +125,13 @@ val montgomery_ladder_exponent_step: a: felem -> b: felem ->scalar: lbuffer uint
 
 
 let montgomery_ladder_exponent_step a b scalar i = 
+    let h0 = ST.get() in 
   let bit0 = (size 255) -. i in 
   let bit = scalar_bit scalar bit0 in 
   cswap bit a b;
+    let h1 = ST.get() in 
   montgomery_ladder_exponent_step0 a b;
+    let h2 = ST.get() in 
   cswap bit a b
 
 
