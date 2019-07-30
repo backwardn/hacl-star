@@ -102,7 +102,7 @@ val scalar_bit:
   -> n:size_t{v n < 256}
   -> Stack uint64
     (requires fun h0 -> live h0 s)
-    (ensures  fun h0 r h1 -> h0 == h1 /\ r == Hacl.Spec.P256.ith_bit (as_seq h0 s) (v n) /\ v r <= 1)
+    (ensures  fun h0 r h1 -> h0 == h1 /\ r == Hacl.Spec.ECDSA.ith_bit (as_seq h0 s) (v n) /\ v r <= 1)
 
 let scalar_bit s n =
  let h0 = ST.get () in
