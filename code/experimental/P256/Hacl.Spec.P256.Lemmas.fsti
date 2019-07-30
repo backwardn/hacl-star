@@ -57,7 +57,7 @@ let modp_inv_prime (prime: pos {prime > 3}) (x: nat {x < prime})  : Tot (r: nat{
   (exp x (prime - 2) prime) % prime
 
 noextract
-let modp_inv2_prime (x: nat) (p: nat {p > 3}) : Tot (r: nat {r < p}) = 
+let modp_inv2_prime (x: int) (p: nat {p > 3}) : Tot (r: nat {r < p}) = 
   assert_norm (prime > 0);
   let r:nat = x % p in  
   modp_inv_prime p r
