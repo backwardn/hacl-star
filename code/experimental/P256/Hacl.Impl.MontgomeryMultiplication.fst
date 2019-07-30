@@ -493,6 +493,8 @@ assume val multiplicationInDomain: #k: nat -> #l: nat ->
     
 assume val inDomain_mod_is_not_mod: a: nat -> Lemma (toDomain_ a == toDomain_ (a % prime))
 
+assume val lemmaToDomainFromDomain: a: nat { a < prime} -> Lemma (fromDomain_ (toDomain_ a) == a)
+
 
 val montgomery_multiplication_ecdsa_module: a: felem -> b: felem ->result: felem-> 
   Stack unit 

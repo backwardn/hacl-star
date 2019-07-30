@@ -12,9 +12,11 @@ open FStar.Math.Lemmas
 
 open Hacl.Spec.P256.Lemmas
 open Hacl.Spec.ECDSAP256.Definition
+open Hacl.Spec.ECDSA
 open Hacl.Impl.LowLevel
 open Hacl.Spec.P256.Basic
 open Hacl.Spec.P256.Core
+open Hacl.Spec.P256.Ladder
 
 open FStar.Mul
 
@@ -49,7 +51,6 @@ val cswap: bit:uint64{v bit <= 1} -> p:felem -> q:felem
       (v bit == 1 ==> as_seq h1 p == as_seq h0 q /\ as_seq h1 q == as_seq h0 p) /\
       (v bit == 0 ==> as_seq h1 p == as_seq h0 p /\ as_seq h1 q == as_seq h0 q)))
 
-open Hacl.Spec.P256.Ladder 
 
 let cswap bit p1 p2 =
   let h0 = ST.get () in
@@ -81,24 +82,30 @@ inline_for_extraction noextract
 val montgomery_ladder_exponent_step0: a: felem -> b: felem -> Stack unit
   (requires fun h -> live h a /\ live h b /\ as_nat h a < prime /\ as_nat h b < prime /\ disjoint a b )
   (ensures fun h0 _ h1 -> modifies2 a b h0 h1 /\ as_nat h1 a < prime /\ as_nat h1 b < prime /\
-    (*as_nat h1 b == fromDomain_ (as_nat h0 a * as_nat h0 b) /\
-    as_nat h1 a == fromDomain_ (as_nat h0 a * as_nat h0 a) /\
-*)
-    let a = fromDomain_ (as_nat h0 a) in 
-    let b = fromDomain_ (as_nat h0 b) in 
-    let (r0D, r1D) = exp_step0 a b in 
-    r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b)  
-
-  )
+    (
+      let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
+      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b)  
+    )
+)
 
 let montgomery_ladder_exponent_step0 a b = 
     let h0 = ST.get() in 
-  montgomery_multiplication_ecdsa_module a b b;
+  montgomery_multiplication_ecdsa_module a b a;
     let h1 = ST.get() in 
-    assert(as_nat h1 b = fromDomain_ (as_nat h0 a * as_nat h0 b));
-  montgomery_multiplication_ecdsa_module a a a;
+    assert(as_nat h1 a = toDomain_ (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime));
+    lemmaToDomainFromDomain (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime);
+    assert(fromDomain_ (as_nat h1 a) = (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime));
+  montgomery_multiplication_ecdsa_module b b b;
     let h2 = ST.get() in 
-    assert(as_nat h2 a = fromDomain_ (as_nat h0 a * as_nat h0 a))
+    assert(fromDomain_ (as_nat h2 b) = fromDomain_ (toDomain_ (fromDomain_ (as_nat h0 b) * fromDomain_ (as_nat h0 b) % prime)));
+    lemmaToDomainFromDomain (fromDomain_ (as_nat h0 b) * fromDomain_ (as_nat h0 b) % prime);
+    assert(fromDomain_ (as_nat h2 b) = fromDomain_ (as_nat h0 b) * fromDomain_ (as_nat h0 b) % prime);
+
+  let (t0, t1) = _exp_step1 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
+  assert(t1 = fromDomain_(as_nat h0 b) * fromDomain_ (as_nat h0 b) % prime);
+  assert(t0 = fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime);
+  assert(t0 == fromDomain_ (as_nat h1 a));
+  assert(t1 == fromDomain_ (as_nat h2 b))
 
 
 (* this piece of code is taken from Hacl.Curve25519 *)
