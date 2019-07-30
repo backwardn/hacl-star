@@ -375,7 +375,7 @@ let montgomery_multiplication_round t round k0 primeBuffer =
       let h4 = ST.get() in 
   pop_frame()
 
-
+inline_for_extraction noextract
 val montgomery_multiplication_round_twice: t: widefelem -> result: widefelem -> k0: uint64 -> primeBuffer : felem -> 
   Stack unit 
     (requires fun h -> live h t /\ live h result /\ live h primeBuffer /\
@@ -474,14 +474,14 @@ let upload_k0 () =
 
 
 
-val _montgomery_multiplication_ecdsa_module: a: felem -> b: felem ->result: felem-> 
+val montgomery_multiplication_ecdsa_module: a: felem -> b: felem ->result: felem-> 
   Stack unit 
     (requires fun h -> live h a /\ live h b /\ live h result /\
       as_nat h a < prime /\ as_nat h b < prime)
     (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ as_nat h1 result = (as_nat h0 a * as_nat h0 b * modp_inv2_prime (pow2 256) prime) % prime )
 
 
-let _montgomery_multiplication_ecdsa_module a b result =
+let montgomery_multiplication_ecdsa_module a b result =
   push_frame();
     let t = create (size 8) (u64 0) in 
     let round2 = create (size 8) (u64 0) in 
