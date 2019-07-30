@@ -42,9 +42,14 @@ assume val lemmaFromDomainToDomainModuloPrime: a: nat -> Lemma (a % prime == fro
 val cswap: bit:uint64{v bit <= 1} -> p:felem -> q:felem
   -> Stack unit
     (requires fun h ->
+      as_nat h p < prime /\ as_nat h q < prime /\ 
       live h p /\ live h q /\ (disjoint p q \/ p == q))
     (ensures  fun h0 _ h1 ->
       modifies (loc p |+| loc q) h0 h1 /\
+	(
+	  let (r0, r1) = Hacl.Spec.ECDSA.conditional_swap bit (as_nat h0 p) (as_nat h0 q) in 
+	  if uint_v bit = 0 then r0 == as_nat h0 p /\ r1 == as_nat h0 q else r0 == as_nat h0 q /\ r1 == as_nat h0 p) /\
+	
       (
 	let pBefore = as_seq h0 p in let qBefore = as_seq h0 q in 
 	let pAfter = as_seq h1 p in let qAfter = as_seq h1 q in 
@@ -128,8 +133,14 @@ let scalar_bit s n =
 inline_for_extraction noextract 
 val montgomery_ladder_exponent_step: a: felem -> b: felem ->scalar: lbuffer uint8 (size 32) ->   i:size_t{v i < 256} ->  Stack unit
   (requires fun h -> live h a  /\ live h b /\ live h scalar /\ as_nat h a < prime /\ as_nat h b < prime /\ disjoint a b)
-  (ensures fun h0 _ h1 -> modifies2 a b h0 h1)
-
+  (ensures fun h0 _ h1 -> modifies2 a b h0 h1 /\
+    (
+      let a_ = fromDomain_ (as_nat h0 a) in 
+      let b_ = fromDomain_ (as_nat h0 b) in 
+      let (r0D, r1D) = _exp_step_swap (as_seq h0 scalar) (uint_v i) (a_, b_) in 
+      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b)
+    )
+  )  
 
 let montgomery_ladder_exponent_step a b scalar i = 
     let h0 = ST.get() in 
@@ -139,9 +150,36 @@ let montgomery_ladder_exponent_step a b scalar i =
     let h1 = ST.get() in 
   montgomery_ladder_exponent_step0 a b;
     let h2 = ST.get() in 
-  cswap bit a b
+  cswap bit a b;
+    let h3 = ST.get() in 
+
+  assert(if uint_v bit = 0 
+    then 
+      as_nat h1 a == as_nat h0 a /\ as_nat h1 b == as_nat h0 b 
+    else
+      as_nat h1 a == as_nat h0 b /\ as_nat h1 b == as_nat h0 a);
+
+  assert(
+    if uint_v bit = 0 then 
+    let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
+      r0D == fromDomain_ (as_nat h2 a) /\ r1D == fromDomain_ (as_nat h2 b) 
+    else
+      let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 b)) (fromDomain_ (as_nat h0 a)) in 
+      r0D == fromDomain_ (as_nat h2 a) /\ r1D == fromDomain_ (as_nat h2 b));
+
+  assert(if uint_v bit = 0 
+    then  
+      as_nat h3 a == as_nat h2 a /\ as_nat h3 b == as_nat h2 b
+    else
+      as_nat h3 a == as_nat h2 b /\ as_nat h3 b == as_nat h2 a);
+      
+      
 
 
+  admit()
+
+
+(*
 
 inline_for_extraction noextract 
 val _montgomery_ladder_exponent: a: felem ->b: felem ->  scalar: lbuffer uint8 (size 32) -> Stack unit
