@@ -15,6 +15,8 @@ open Hacl.Spec.P256
 
 open Hacl.Spec.P256.MontgomeryMultiplication.PointDouble
 
+let prime = prime256
+
 #reset-options "--z3rlimit 300 --z3refresh" 
 
 val move_from_jacobian_coordinates_lemma: 

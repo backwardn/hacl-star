@@ -16,6 +16,7 @@ open Hacl.Spec.P256
 
 #set-options "--z3rlimit 300" 
 
+let prime = prime256
 
 val computeS:
   px: felem_seq_prime -> 

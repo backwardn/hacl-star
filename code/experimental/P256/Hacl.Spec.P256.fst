@@ -12,11 +12,11 @@ open Lib.Sequence
 noextract
 let _point_double  (p:point_nat) :  (p:point_nat) =
   let x, y, z = p in 
-  let s = (4 * x * y * y) % prime in 
-  let m = ((-3) * z * z * z * z + 3 * x * x) % prime in 
-  let x3 = (m * m - 2 * s) % prime in 
-  let y3 = (m * (s - x3) - 8 * y * y * y * y) % prime in 
-  let z3 = (2 * y * z) % prime in 
+  let s = (4 * x * y * y) % prime256 in 
+  let m = ((-3) * z * z * z * z + 3 * x * x) % prime256 in 
+  let x3 = (m * m - 2 * s) % prime256 in 
+  let y3 = (m * (s - x3) - 8 * y * y * y * y) % prime256 in 
+  let z3 = (2 * y * z) % prime256 in 
   (x3, y3, z3)
 
 
@@ -32,14 +32,14 @@ let _point_add (p:point_nat) (q:point_nat) : point_nat =
   let z2z2 = z2 * z2 in 
   let z1z1 = z1 * z1 in 
 
-  let u1 = x1 * z2z2 % prime in 
-  let u2 = x2 * z1z1 % prime in 
+  let u1 = x1 * z2z2 % prime256 in 
+  let u2 = x2 * z1z1 % prime256 in 
 
   assert_by_tactic (x1 * z2 * z2 = x1 * (z2 * z2)) canon;
   assert_by_tactic (x2 * z1 * z1 = x2 * (z1 * z1)) canon;
   
-  let s1 = y1 * z2 * z2z2 % prime in 
-  let s2 = y2 * z1 * z1z1 % prime in
+  let s1 = y1 * z2 * z2z2 % prime256 in 
+  let s2 = y2 * z1 * z1z1 % prime256 in
 
   assert_by_tactic (y1 * z2 * (z2 * z2) = y1 * z2 * z2 * z2) canon;
   assert_by_tactic (y2 * z1 * (z1 * z1) = y2 * z1 * z1 * z1) canon;
@@ -49,8 +49,8 @@ let _point_add (p:point_nat) (q:point_nat) : point_nat =
   else 
     begin
 
-      let h = (u2 - u1) % prime in 
-      let r = (s2 - s1) % prime in
+      let h = (u2 - u1) % prime256 in 
+      let r = (s2 - s1) % prime256 in
 
       let rr = (r * r)in 
       let hh = (h * h) in 
@@ -58,11 +58,11 @@ let _point_add (p:point_nat) (q:point_nat) : point_nat =
 
   assert_by_tactic (forall (n: nat). n * h * h = n * (h * h)) canon; 
   assert_by_tactic (s1 * (h * h * h) = s1 * h * h * h) canon;
-      let x3 = (rr - hhh - 2 * u1 * hh) % prime in 
-  assert(x3 = (r * r - h * h * h - 2 * u1 * h * h) % prime);
-      let y3 = (r * (u1 * hh - x3) - s1 * hhh) % prime in
-  assert(y3 = (r * (u1 * h*h - x3) - s1 * h*h*h) % prime);
-      let z3 = (h * z1 * z2) % prime in
+      let x3 = (rr - hhh - 2 * u1 * hh) % prime256 in 
+  assert(x3 = (r * r - h * h * h - 2 * u1 * h * h) % prime256);
+      let y3 = (r * (u1 * hh - x3) - s1 * hhh) % prime256 in
+  assert(y3 = (r * (u1 * h*h - x3) - s1 * h*h*h) % prime256);
+      let z3 = (h * z1 * z2) % prime256 in
       if z2 = 0 then 
   (x1, y1, z1) 
       else if z1 = 0 then
@@ -77,11 +77,11 @@ let _norm (p:point_nat): (point_nat) =
   let z2i = modp_inv2_pow z2 in 
   let z3 = z * z * z in 
   let z3i = modp_inv2_pow z3 in 
-  let x3 = (z2i * x) % prime in 
-  let y3 = (z3i * y) % prime in 
+  let x3 = (z2i * x) % prime256 in 
+  let y3 = (z3i * y) % prime256 in 
   let z3 = 1 in 
-  assert(x3 == (x * (pow (z * z) (prime -2) % prime) % prime));
-  assert(y3 == (y * (pow (z * z * z) (prime - 2) % prime) % prime));
+  assert(x3 == (x * (pow (z * z) (prime256 -2) % prime256) % prime256));
+  assert(y3 == (y * (pow (z * z * z) (prime256 - 2) % prime256) % prime256));
   assert(z3 == 1);
   (x3, y3, z3)
 

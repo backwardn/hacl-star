@@ -20,15 +20,16 @@ open Lib.Loops
 
 #reset-options "--z3rlimit 300"
 
+let prime = prime256
 
-let fromDomain_ a = (a * modp_inv2 (pow2 256)) % prime
+let fromDomain_ a = (a * modp_inv2 (pow2 256)) % prime256
 
 let fromDomainPoint a = 
   let x, y, z = a in 
   fromDomain_ x, fromDomain_ y, fromDomain_ z
 
 
-val fromDomain: a: felem4{as_nat4 a < prime} -> Tot (result: felem4 {as_nat4 result = fromDomain_ (as_nat4 a)})
+val fromDomain: a: felem4{as_nat4 a < prime256} -> Tot (result: felem4 {as_nat4 result = fromDomain_ (as_nat4 a)})
 
 let fromDomain a =  
   let one = ((u64 1), (u64 0), u64 0, u64 0) in
@@ -36,7 +37,7 @@ let fromDomain a =
   Core.montgomery_multiplication one a
 
 
-let toDomain_ a = (a * pow2 256) % prime
+let toDomain_ a = (a * pow2 256) % prime256
 
 let lemmaFromDomain a = ()
 
@@ -50,11 +51,11 @@ let lemmaToDomainAndBackIsTheSame a =
     lemmaToDomain a;
   let from = fromDomain_ to in 
     lemmaFromDomain to;
-    lemma_mod_mul_distr_l (a * pow2 256) (modp_inv2 (pow2 256)) prime;
-    assert(from = (a * pow2 256 * modp_inv2 (pow2 256)) % prime);
-    assert_norm (pow2 256 * modp_inv2 (pow2 256) % prime = 1);
-  modulo_distributivity_mult_last_two a 1 1 (pow2 256) (modp_inv2 (pow2 256)) prime;
-    assert((a * pow2 256 * modp_inv2 (pow2 256)) % prime == (a * (pow2 256 * modp_inv2 (pow2 256) % prime)) % prime);
+    lemma_mod_mul_distr_l (a * pow2 256) (modp_inv2 (pow2 256)) prime256;
+    assert(from = (a * pow2 256 * modp_inv2 (pow2 256)) % prime256);
+    assert_norm (pow2 256 * modp_inv2 (pow2 256) % prime256 = 1);
+  modulo_distributivity_mult_last_two a 1 1 (pow2 256) (modp_inv2 (pow2 256)) prime256;
+    assert((a * pow2 256 * modp_inv2 (pow2 256)) % prime256 == (a * (pow2 256 * modp_inv2 (pow2 256) % prime)) % prime256);
     modulo_lemma a prime;
     assert(from = a)
 
@@ -64,18 +65,18 @@ let lemmaFromDomainToDomain a =
     lemmaFromDomain a;
   let to = toDomain_ from in 
     lemmaToDomain from;
-  lemma_mod_mul_distr_l (a * modp_inv2 (pow2 256)) (pow2 256)  prime;
+  lemma_mod_mul_distr_l (a * modp_inv2 (pow2 256)) (pow2 256)  prime256;
   assert_norm (modp_inv2 (pow2 256) * (pow2 256) % prime = 1);
-  modulo_distributivity_mult_last_two a 1 1 (modp_inv2 (pow2 256)) (pow2 256) prime;
+  modulo_distributivity_mult_last_two a 1 1 (modp_inv2 (pow2 256)) (pow2 256) prime256;
   modulo_lemma a prime
 
 
-val lemmaFromDomainToDomainModuloPrime: a: int -> Lemma (a % prime == fromDomain_(toDomain_ a))
+val lemmaFromDomainToDomainModuloPrime: a: int -> Lemma (a % prime256 == fromDomain_(toDomain_ a))
 
 let lemmaFromDomainToDomainModuloPrime a = 
-  lemma_mod_mul_distr_l (a*pow2 256) (modp_inv2 (pow2 256)) prime;
-  assert_norm (pow2 256 * modp_inv2 (pow2 256) % prime = 1);
-  modulo_distributivity_mult_last_two a 1 1 (pow2 256) (modp_inv2 (pow2 256)) prime
+  lemma_mod_mul_distr_l (a*pow2 256) (modp_inv2 (pow2 256)) prime256;
+  assert_norm (pow2 256 * modp_inv2 (pow2 256) % prime256 = 1);
+  modulo_distributivity_mult_last_two a 1 1 (pow2 256) (modp_inv2 (pow2 256)) prime256
 
 (* it is the key lemma of Montgomery Multiplication, showing that it's correct (i.e. mm(a, b) = a * b * 2^-256 *)
 (*
@@ -106,13 +107,13 @@ let lemmaMontgomeryMultiplicationCorrect a b =
 
 
 let inDomain_mod_is_not_mod a = 
-  lemma_mod_mul_distr_l a (pow2 256) prime
+  lemma_mod_mul_distr_l a (pow2 256) prime256
 
 
 (* the lemma shows that the result of multiplication moved out of domain is the multiplication of the numbers moved out of domain *)
 val multiplicationInDomain: #k: nat -> #l: nat -> 
   a: felem4 {as_nat4 a == toDomain_ (k) /\ as_nat4 a < prime} -> 
-  b: felem4 {as_nat4 b == toDomain_ (l) /\ as_nat4 b < prime} -> Lemma 
+  b: felem4 {as_nat4 b == toDomain_ (l) /\ as_nat4 b < prime256} -> Lemma 
     (ensures (let multResult = Core.montgomery_multiplication a b in as_nat4 multResult == toDomain_ (k * l)))
     
 let multiplicationInDomain #k #l a b = 

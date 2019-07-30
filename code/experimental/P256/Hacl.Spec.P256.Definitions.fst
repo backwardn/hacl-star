@@ -12,7 +12,7 @@ open FStar.Mul
 
 
 noextract
-let prime:pos =
+let prime256:pos =
   assert_norm (pow2 256 - pow2 224 + pow2 192 + pow2 96 -1 > 0);
   pow2 256 - pow2 224 + pow2 192 + pow2 96 -1
 
@@ -25,13 +25,13 @@ let p256_prime_list : x:list uint64{List.Tot.length x == 4 /\
     let l1 = uint_v (List.Tot.index x 1) in 
     let l2 = uint_v (List.Tot.index x 2) in 
     let l3 = uint_v (List.Tot.index x 3) in 
-    l0 + l1 * pow2 64 + l2 * pow2 128 + l3 * pow2 192 == prime)
+    l0 + l1 * pow2 64 + l2 * pow2 128 + l3 * pow2 192 == prime256)
   } =
   let open FStar.Mul in 
   [@inline_let]
   let x =
     [ (u64 0xffffffffffffffff);  (u64 0xffffffff); (u64 0);  (u64 0xffffffff00000001);] in
-    assert_norm(0xffffffffffffffff + 0xffffffff * pow2 64 + 0xffffffff00000001 * pow2 192 == prime);
+    assert_norm(0xffffffffffffffff + 0xffffffff * pow2 64 + 0xffffffff00000001 * pow2 192 == prime256);
   x
 
 inline_for_extraction noextract
@@ -139,10 +139,10 @@ let felem_seq_as_nat_8 (a: lseq uint64 8) : Tot nat =
 open FStar.Mul
 
 noextract
-let felem_seq_prime = a: felem_seq {felem_seq_as_nat a < prime}
+let felem_seq_prime = a: felem_seq {felem_seq_as_nat a < prime256}
 noextract
 let point_prime =  p: point_seq{let x = Lib.Sequence.sub p 0 4 in let y = Lib.Sequence.sub p 4 4 in let z = Lib.Sequence.sub p 8 4 in 
-  felem_seq_as_nat x < prime /\ felem_seq_as_nat y < prime /\ felem_seq_as_nat z < prime} 
+  felem_seq_as_nat x < prime256 /\ felem_seq_as_nat y < prime256 /\ felem_seq_as_nat z < prime256} 
 
 
 inline_for_extraction

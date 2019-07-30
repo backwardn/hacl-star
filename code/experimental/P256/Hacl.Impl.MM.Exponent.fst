@@ -11,7 +11,7 @@ open Lib.Buffer
 open FStar.Math.Lemmas
 
 open Hacl.Spec.P256.Lemmas
-open Hacl.Spec.P256.Definitions
+open Hacl.Spec.ECDSAP256.Definition
 open Hacl.Impl.LowLevel
 open Hacl.Spec.P256.Basic
 open Hacl.Spec.P256.Core
@@ -21,50 +21,35 @@ open FStar.Mul
 open Hacl.Impl.MontgomeryMultiplication
 open Lib.Loops
 
-noextract
-val fromDomain_: a: nat -> Tot nat
-
-let fromDomain_ a = (a * modp_inv2_prime (pow2 256) prime) % prime
+#reset-options "--z3refresh --z3rlimit 200"
 
 noextract
-val toDomain_: a: nat -> Tot nat
-let toDomain_ a = (a * pow2 256) % prime 
+let prime = prime_p256_order
 
-
+(*
 assume val lemmaFromDomainToDomain:  a: nat -> Lemma (toDomain_ (fromDomain_ a)  == a)
 
 assume val inDomain_mod_is_not_mod: a: nat ->  Lemma (toDomain_ a == toDomain_ (a % prime))
 
 assume val lemmaFromDomainToDomainModuloPrime: a: nat -> Lemma (a % prime == fromDomain_(toDomain_ a))
+*)
 
 
-
-open Hacl.Spec.P256.Ladder
 
 [@ CInline]
 val cswap: bit:uint64{v bit <= 1} -> p:felem -> q:felem
   -> Stack unit
     (requires fun h ->
-      live h p /\ live h q /\ (disjoint p q \/ p == q) /\
-           
-      as_nat h (gsub p (size 0) (size 4)) < prime /\ 
-      as_nat h (gsub p (size 4) (size 4)) < prime /\
-      as_nat h (gsub p (size 8) (size 4)) < prime /\
-	     
-      as_nat h (gsub q (size 0) (size 4)) < prime /\  
-      as_nat h (gsub q (size 4) (size 4)) < prime /\
-      as_nat h (gsub q (size 8) (size 4)) < prime
-)
+      live h p /\ live h q /\ (disjoint p q \/ p == q))
     (ensures  fun h0 _ h1 ->
       modifies (loc p |+| loc q) h0 h1 /\
-      (let pBefore = as_seq h0 p in let qBefore = as_seq h0 q in 
+      (
+	let pBefore = as_seq h0 p in let qBefore = as_seq h0 q in 
 	let pAfter = as_seq h1 p in let qAfter = as_seq h1 q in 
-	let condP0, condP1 = conditional_swap bit pBefore qBefore  in 
-	condP0 == pAfter /\ condP1 == qAfter) /\ 
-
       (v bit == 1 ==> as_seq h1 p == as_seq h0 q /\ as_seq h1 q == as_seq h0 p) /\
-      (v bit == 0 ==> as_seq h1 p == as_seq h0 p /\ as_seq h1 q == as_seq h0 q))
+      (v bit == 0 ==> as_seq h1 p == as_seq h0 p /\ as_seq h1 q == as_seq h0 q)))
 
+open Hacl.Spec.P256.Ladder 
 
 let cswap bit p1 p2 =
   let h0 = ST.get () in
@@ -76,7 +61,7 @@ let cswap bit p1 p2 =
       if v bit = 1
       then (as_seq h1 p1).[k] == (as_seq h0 p2).[k] /\ (as_seq h1 p2).[k] == (as_seq h0 p1).[k]
       else (as_seq h1 p1).[k] == (as_seq h0 p1).[k] /\ (as_seq h1 p2).[k] == (as_seq h0 p2).[k]) /\
-    (forall (k:nat{i <= k /\ k < 12}).
+    (forall (k:nat{i <= k /\ k < 4}).
       (as_seq h1 p1).[k] == (as_seq h0 p1).[k] /\ (as_seq h1 p2).[k] == (as_seq h0 p2).[k]) /\
     modifies (loc p1 |+| loc p2) h0 h1 in
  
@@ -91,15 +76,23 @@ let cswap bit p1 p2 =
   Lib.Sequence.eq_intro (as_seq h1 p1) (if v bit = 1 then as_seq h0 p2 else as_seq h0 p1);
   Lib.Sequence.eq_intro (as_seq h1 p2) (if v bit = 1 then as_seq h0 p1 else as_seq h0 p2)
 
+
 inline_for_extraction noextract
 val montgomery_ladder_exponent_step0: a: felem -> b: felem -> Stack unit
-  (requires fun h -> True)
-  (ensures fun h0 _ h1 -> True)
+  (requires fun h -> live h a /\ live h b /\ as_nat h a < prime /\ as_nat h b < prime /\ disjoint a b )
+  (ensures fun h0 _ h1 -> modifies2 a b h0 h1 /\ as_nat h1 a < prime /\ as_nat h1 b < prime /\
+    as_nat h1 b == fromDomain_ (as_nat h0 a * as_nat h0 b) /\
+    as_nat h1 a == fromDomain_ (as_nat h0 a * as_nat h0 a)
+  )
 
 let montgomery_ladder_exponent_step0 a b = 
+    let h0 = ST.get() in 
   montgomery_multiplication_ecdsa_module a b b;
-  montgomery_multiplication_ecdsa_module a a a
-
+    let h1 = ST.get() in 
+    assert(as_nat h1 b = fromDomain_ (as_nat h0 a * as_nat h0 b));
+  montgomery_multiplication_ecdsa_module a a a;
+    let h2 = ST.get() in 
+    assert(as_nat h2 a = fromDomain_ (as_nat h0 a * as_nat h0 a))
 
 
 (* this piece of code is taken from Hacl.Curve25519 *)
@@ -109,7 +102,7 @@ val scalar_bit:
   -> n:size_t{v n < 256}
   -> Stack uint64
     (requires fun h0 -> live h0 s)
-    (ensures  fun h0 r h1 -> h0 == h1 (*/\ r == ith_bit (as_seq h0 s) (v n) /\ v r <= 1) *) )
+    (ensures  fun h0 r h1 -> h0 == h1 /\ r == Hacl.Spec.P256.ith_bit (as_seq h0 s) (v n) /\ v r <= 1)
 
 let scalar_bit s n =
  let h0 = ST.get () in
@@ -118,10 +111,11 @@ let scalar_bit s n =
   uintv_extensionality (mod_mask #U8 1ul) (u8 1);
   to_u64 ((s.(n /. 8ul) >>. (n %. 8ul)) &. u8 1)
 
+
 inline_for_extraction noextract 
 val montgomery_ladder_exponent_step: a: felem -> b: felem ->scalar: lbuffer uint8 (size 32) ->   i:size_t{v i < 256} ->  Stack unit
-  (requires fun h -> live h a  /\ live h b)
-  (ensures fun h0 _ h1 -> True)
+  (requires fun h -> live h a  /\ live h b /\ live h scalar /\ as_nat h a < prime /\ as_nat h b < prime /\ disjoint a b)
+  (ensures fun h0 _ h1 -> modifies2 a b h0 h1)
 
 
 let montgomery_ladder_exponent_step a b scalar i = 
@@ -129,9 +123,9 @@ let montgomery_ladder_exponent_step a b scalar i =
   let bit = scalar_bit scalar bit0 in 
   cswap bit a b;
   montgomery_ladder_exponent_step0 a b;
-  cswap bit a b;
-  
-  ()
+  cswap bit a b
+
+
 
 inline_for_extraction noextract 
 val _montgomery_ladder_exponent: a: felem ->b: felem ->  scalar: lbuffer uint8 (size 32) -> Stack unit
