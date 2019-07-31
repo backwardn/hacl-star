@@ -266,7 +266,7 @@ val upload_scalar: b: lbuffer uint8 (size 32) -> Stack unit
   (ensures fun h0 _ h1 -> True)
 
 let upload_scalar b = 
-  upd b (size 0) (u8 81);
+  upd b (size 0) (u8 79);
   upd b (size 1) (u8 37);
   upd b (size 2) (u8 99);
   upd b (size 3) (u8 252);
