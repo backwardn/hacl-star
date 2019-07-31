@@ -633,24 +633,65 @@ void Hacl_Impl_MM_Exponent_cswap(uint64_t bit, uint64_t *p1, uint64_t *p2)
   }
 }
 
-void Hacl_Impl_MM_Exponent_montgomery_ladder_exponent(uint64_t *a)
+void Hacl_Impl_MM_Exponent_montgomery_ladder_exponent(uint64_t *r)
 {
-  uint64_t b[4U] = { 0U };
+  uint64_t p[4U] = { 0U };
   uint8_t scalar[32U] = { 0U };
-  for (uint32_t i = (uint32_t)0U; i < (uint32_t)256U; i = i + (uint32_t)1U)
+  p[0U] = (uint64_t)884452912994769583U;
+  p[1U] = (uint64_t)4834901526196019579U;
+  p[2U] = (uint64_t)0U;
+  p[3U] = (uint64_t)4294967295U;
+  scalar[0U] = (uint8_t)79U;
+  scalar[1U] = (uint8_t)37U;
+  scalar[2U] = (uint8_t)99U;
+  scalar[3U] = (uint8_t)252U;
+  scalar[4U] = (uint8_t)194U;
+  scalar[5U] = (uint8_t)202U;
+  scalar[6U] = (uint8_t)185U;
+  scalar[7U] = (uint8_t)243U;
+  scalar[8U] = (uint8_t)132U;
+  scalar[9U] = (uint8_t)158U;
+  scalar[10U] = (uint8_t)23U;
+  scalar[11U] = (uint8_t)167U;
+  scalar[12U] = (uint8_t)173U;
+  scalar[13U] = (uint8_t)250U;
+  scalar[14U] = (uint8_t)230U;
+  scalar[15U] = (uint8_t)188U;
+  scalar[16U] = (uint8_t)255U;
+  scalar[17U] = (uint8_t)255U;
+  scalar[18U] = (uint8_t)255U;
+  scalar[19U] = (uint8_t)255U;
+  scalar[20U] = (uint8_t)255U;
+  scalar[21U] = (uint8_t)255U;
+  scalar[22U] = (uint8_t)255U;
+  scalar[23U] = (uint8_t)255U;
+  scalar[24U] = (uint8_t)0U;
+  scalar[25U] = (uint8_t)0U;
+  scalar[26U] = (uint8_t)0U;
+  scalar[27U] = (uint8_t)0U;
+  scalar[28U] = (uint8_t)255U;
+  scalar[29U] = (uint8_t)255U;
+  scalar[30U] = (uint8_t)255U;
+  scalar[31U] = (uint8_t)255U;
+  for (uint32_t i = (uint32_t)0U; i < (uint32_t)256; i = i + (uint32_t)1U)
   {
     uint32_t bit0 = (uint32_t)255U - i;
     uint64_t bit = (uint64_t)(scalar[bit0 / (uint32_t)8U] >> bit0 % (uint32_t)8U & (uint8_t)1U);
-    Hacl_Impl_MM_Exponent_cswap(bit, a, b);
-    Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(a, b, b);
-    Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(a, a, a);
-    Hacl_Impl_MM_Exponent_cswap(bit, a, b);
+    Hacl_Impl_MM_Exponent_cswap(bit, p, r);
+    Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(p, r, r);
+    Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(p, p, p);
+    Hacl_Impl_MM_Exponent_cswap(bit, p, r);
   }
+  memcpy(r, p, (uint32_t)4U * sizeof p[0U]);
 }
 
 void Hacl_Impl_MM_Exponent_fromDomainImpl(uint64_t *a, uint64_t *result)
 {
   uint64_t one1[4U] = { 0U };
+  one1[0U] = (uint64_t)1U;
+  one1[1U] = (uint64_t)0U;
+  one1[2U] = (uint64_t)0U;
+  one1[3U] = (uint64_t)0U;
   Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(one1, a, result);
 }
 

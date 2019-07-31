@@ -267,51 +267,51 @@ val upload_scalar: b: lbuffer uint8 (size 32) -> Stack unit
 
 let upload_scalar b = 
   upd b (size 0) (u8 81);
-  upd b (size 0) (u8 37);
-  upd b (size 0) (u8 99);
-  upd b (size 0) (u8 252);
-  upd b (size 0) (u8 194);
-  upd b (size 0) (u8 202);
-  upd b (size 0) (u8 185);
-  upd b (size 0) (u8 243);
-  upd b (size 0) (u8 132);
-  upd b (size 0) (u8 158);
-  upd b (size 0) (u8 23);
-  upd b (size 0) (u8 167);
-  upd b (size 0) (u8 173);
-  upd b (size 0) (u8 250);
-  upd b (size 0) (u8 230);
-  upd b (size 0) (u8 188);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 0);
-  upd b (size 0) (u8 0);
-  upd b (size 0) (u8 0);
-  upd b (size 0) (u8 0);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 255);
-  upd b (size 0) (u8 255)
+  upd b (size 1) (u8 37);
+  upd b (size 2) (u8 99);
+  upd b (size 3) (u8 252);
+  upd b (size 4) (u8 194);
+  upd b (size 5) (u8 202);
+  upd b (size 6) (u8 185);
+  upd b (size 7) (u8 243);
+  upd b (size 8) (u8 132);
+  upd b (size 9) (u8 158);
+  upd b (size 10) (u8 23);
+  upd b (size 11) (u8 167);
+  upd b (size 12) (u8 173);
+  upd b (size 13) (u8 250);
+  upd b (size 14) (u8 230);
+  upd b (size 15) (u8 188);
+  upd b (size 16) (u8 255);
+  upd b (size 17) (u8 255);
+  upd b (size 18) (u8 255);
+  upd b (size 19) (u8 255);
+  upd b (size 20) (u8 255);
+  upd b (size 21) (u8 255);
+  upd b (size 22) (u8 255);
+  upd b (size 23) (u8 255);
+  upd b (size 24) (u8 0);
+  upd b (size 25) (u8 0);
+  upd b (size 26) (u8 0);
+  upd b (size 27) (u8 0);
+  upd b (size 28) (u8 255);
+  upd b (size 29) (u8 255);
+  upd b (size 30) (u8 255);
+  upd b (size 31) (u8 255)
 
 
 val montgomery_ladder_exponent: a: felem -> Stack unit 
   (requires fun h -> True)
   (ensures fun h0 _ h1 -> True)
 
-let montgomery_ladder_exponent a = 
+let montgomery_ladder_exponent r = 
   push_frame(); 
-    let b = create (size 4) (u64 0) in 
+    let p = create (size 4) (u64 0) in 
     let scalar = create (size 32) (u8 0) in 
-    upload_one_montg_form b;
+    upload_one_montg_form p;
     upload_scalar scalar;
-
-    _montgomery_ladder_exponent a b scalar;
+    _montgomery_ladder_exponent p r scalar;
+    copy r p;
   pop_frame()  
 
 val fromDomainImpl: a: felem -> result: felem -> Stack unit

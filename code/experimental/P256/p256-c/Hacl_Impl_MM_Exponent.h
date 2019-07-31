@@ -16,7 +16,7 @@
 
 void Hacl_Impl_MM_Exponent_cswap(uint64_t bit, uint64_t *p1, uint64_t *p2);
 
-void Hacl_Impl_MM_Exponent_montgomery_ladder_exponent(uint64_t *a);
+void Hacl_Impl_MM_Exponent_montgomery_ladder_exponent(uint64_t *r);
 
 void Hacl_Impl_MM_Exponent_fromDomainImpl(uint64_t *a, uint64_t *result);
 
