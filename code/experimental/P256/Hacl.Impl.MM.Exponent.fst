@@ -334,7 +334,10 @@ val multPower: a: felem -> b: felem ->  result: felem -> Stack unit
 let multPower a b result = 
   push_frame();
     let tempB1 = create (size 4) (u64 0) in 
+    let buffFromDB = create (size 4) (u64 0) in 
   fromDomainImpl a tempB1;
   montgomery_ladder_exponent tempB1;
-  montgomery_multiplication_ecdsa_module tempB1 b result;
+  fromDomainImpl b buffFromDB;
+  fromDomainImpl buffFromDB buffFromDB;
+  montgomery_multiplication_ecdsa_module tempB1 buffFromDB result;
   pop_frame()
