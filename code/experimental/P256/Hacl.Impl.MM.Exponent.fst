@@ -238,18 +238,66 @@ let _montgomery_ladder_exponent a b scalar =
 
 
 inline_for_extraction noextract 
-val upload_zero_montg_form: b: felem -> Stack unit
-  (requires fun h -> True)
-  (ensures fun h0 _ h1 -> True)
+val upload_one_montg_form: b: felem -> Stack unit
+  (requires fun h -> live h b)
+  (ensures fun h0 _ h1 -> modifies1 b h0 h1 /\ as_nat h1 b == toDomain_ (1))
 
-let upload_zero_montg_form b = ()
+let upload_one_montg_form b =
+  upd b (size 0) (u64 884452912994769583);
+  upd b (size 1) (u64 4834901526196019579);
+  upd b (size 2) (u64 0);
+  upd b (size 3) (u64 4294967295)
+
+inline_for_extraction noextract 
+val upload_one: b: felem -> Stack unit 
+  (requires fun h -> live h b)
+  (ensures fun h0 _ h1 -> modifies1 b h0 h1 /\ as_nat h1 b == 1)
+
+let upload_one b = 
+  upd b (size 0) (u64 1);
+  upd b (size 1) (u64 0);
+  upd b (size 2) (u64 0);
+  upd b (size 3) (u64 0)
+
 
 inline_for_extraction noextract 
 val upload_scalar: b: lbuffer uint8 (size 32) -> Stack unit 
-  (requires fun h -> True)
+  (requires fun h -> live h b)
   (ensures fun h0 _ h1 -> True)
 
-let upload_scalar b = ()
+let upload_scalar b = 
+  upd b (size 0) (u8 81);
+  upd b (size 0) (u8 37);
+  upd b (size 0) (u8 99);
+  upd b (size 0) (u8 252);
+  upd b (size 0) (u8 194);
+  upd b (size 0) (u8 202);
+  upd b (size 0) (u8 185);
+  upd b (size 0) (u8 243);
+  upd b (size 0) (u8 132);
+  upd b (size 0) (u8 158);
+  upd b (size 0) (u8 23);
+  upd b (size 0) (u8 167);
+  upd b (size 0) (u8 173);
+  upd b (size 0) (u8 250);
+  upd b (size 0) (u8 230);
+  upd b (size 0) (u8 188);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 0);
+  upd b (size 0) (u8 0);
+  upd b (size 0) (u8 0);
+  upd b (size 0) (u8 0);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 255);
+  upd b (size 0) (u8 255)
 
 
 val montgomery_ladder_exponent: a: felem -> Stack unit 
@@ -260,19 +308,11 @@ let montgomery_ladder_exponent a =
   push_frame(); 
     let b = create (size 4) (u64 0) in 
     let scalar = create (size 32) (u8 0) in 
-    upload_zero_montg_form b;
+    upload_one_montg_form b;
     upload_scalar scalar;
 
     _montgomery_ladder_exponent a b scalar;
   pop_frame()  
-
-inline_for_extraction noextract 
-val upload_one: one: felem -> Stack unit 
-  (requires fun h -> True)
-  (ensures fun h0 _ h1 -> True)
-
-let upload_one one = admit()
-
 
 val fromDomainImpl: a: felem -> result: felem -> Stack unit
   (requires fun h -> True)
