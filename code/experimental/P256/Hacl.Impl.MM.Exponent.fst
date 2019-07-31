@@ -49,6 +49,7 @@ val cswap: bit:uint64{v bit <= 1} -> p:felem -> q:felem
 	(
 	  let (r0, r1) = Hacl.Spec.ECDSA.conditional_swap bit (as_nat h0 p) (as_nat h0 q) in 
 	  if uint_v bit = 0 then r0 == as_nat h0 p /\ r1 == as_nat h0 q else r0 == as_nat h0 q /\ r1 == as_nat h0 p) /\
+	  as_nat h1 p < prime /\ as_nat h1 q < prime /\
 	
       (
 	let pBefore = as_seq h0 p in let qBefore = as_seq h0 q in 
@@ -89,7 +90,8 @@ val montgomery_ladder_exponent_step0: a: felem -> b: felem -> Stack unit
   (ensures fun h0 _ h1 -> modifies2 a b h0 h1 /\ as_nat h1 a < prime /\ as_nat h1 b < prime /\
     (
       let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
-      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b)  
+      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b)  /\
+      as_nat h1 a < prime /\ as_nat h1 b < prime
     )
 )
 
@@ -137,8 +139,9 @@ val montgomery_ladder_exponent_step: a: felem -> b: felem ->scalar: lbuffer uint
     (
       let a_ = fromDomain_ (as_nat h0 a) in 
       let b_ = fromDomain_ (as_nat h0 b) in 
-      let (r0D, r1D) = _exp_step_swap (as_seq h0 scalar) (uint_v i) (a_, b_) in 
-      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b)
+      let (r0D, r1D) = _exp_step (as_seq h0 scalar) (uint_v i) (a_, b_) in 
+      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b) /\
+      as_nat h1 a < prime /\ as_nat h1 b < prime
     )
   )  
 
@@ -169,30 +172,75 @@ let montgomery_ladder_exponent_step a b scalar i =
 
   assert(if uint_v bit = 0 
     then  
-      as_nat h3 a == as_nat h2 a /\ as_nat h3 b == as_nat h2 b
+      let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
+      fromDomain_ (as_nat h3 a) == r0D /\ fromDomain_ (as_nat h3 b) == r1D
     else
-      as_nat h3 a == as_nat h2 b /\ as_nat h3 b == as_nat h2 a);
+      let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 b)) (fromDomain_ (as_nat h0 a)) in 
+      fromDomain_ (as_nat h3 a) == r1D /\ fromDomain_ (as_nat h3 b) == r0D);
       
-      
+   Hacl.Spec.ECDSA.lemma_swaped_steps (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b))
 
 
-  admit()
+
+inline_for_extraction noextract 
+val _montgomery_ladder_exponent: a: felem ->b: felem ->  scalar: lbuffer uint8 (size 32) -> Stack unit
+  (requires fun h -> live h a /\ live h b /\ live h scalar /\ as_nat h a < prime /\ 
+    as_nat h b < prime /\ disjoint a b /\disjoint a scalar /\ disjoint b scalar)
+  (ensures fun h0 _ h1 -> modifies2 a b h0 h1 /\ 
+    (
+      let a_ = fromDomain_ (as_nat h0 a) in 
+      let b_ = fromDomain_ (as_nat h0 b) in 
+      let (r0D, r1D) = _exponent_spec (as_seq h0 scalar) (a_, b_) in 
+      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b)
+  )
+  )
+
+
+let _montgomery_ladder_exponent a b scalar = 
+  let h0 = ST.get() in 
+
+  [@inline_let]
+  let spec_exp h0  = _exp_step (as_seq h0 scalar) in 
+
+  [@inline_let]
+  let acc (h: mem) : GTot (tuple2 nat_prime nat_prime) = 
+    (fromDomain_ (as_nat h a), fromDomain_ (as_nat h b)) in 
+
+  Lib.LoopCombinators.eq_repeati0 256 (spec_exp h0) (acc h0);
+
+  [@inline_let]
+  let inv h (i: nat {i <= 256}) = 
+    live h a /\ live h b /\ live h scalar /\ 
+    modifies2 a b h0 h /\ 
+    as_nat h a < prime /\ as_nat h b < prime /\
+    acc h == Lib.LoopCombinators.repeati i (spec_exp h0) (acc h0)     
+    in 
+
+  for 0ul 256ul inv (
+    fun i -> 
+	let h3 = ST.get() in
+	  montgomery_ladder_exponent_step a b scalar i;
+	  let h4 = ST.get() in   
+	  assert(modifies2 a b h3 h4);
+	  assert(modifies2 a b h0 h4);
+	  assert(
+	    let a_ = fromDomain_ (as_nat h3 a) in 
+	    let b_ = fromDomain_ (as_nat h3 b) in 
+	    let (r0D, r1D) = _exp_step (as_seq h0 scalar) (uint_v i) (a_, b_) in  
+	    r0D == fromDomain_ (as_nat h4 a));
+
+	  Lib.LoopCombinators.unfold_repeati 256 (spec_exp h0) (acc h0) (uint_v i);
+	assert(acc h4 == Lib.LoopCombinators.repeati (uint_v i + 1) (spec_exp h0) (acc h0))
+  )
+
+
 
 
 (*
 
-inline_for_extraction noextract 
-val _montgomery_ladder_exponent: a: felem ->b: felem ->  scalar: lbuffer uint8 (size 32) -> Stack unit
-  (requires fun h -> True)
-  (ensures fun h0 _ h1 -> True)
 
 
-let _montgomery_ladder_exponent a b scalar = 
-  [@inline_let]
-  let inv h (i: nat {i <= 256}) = 
-    True in 
 
-  for 0ul 256ul inv (fun i -> montgomery_ladder_exponent_step a b scalar i)
 
 inline_for_extraction noextract 
 val upload_zero_montg_form: b: felem -> Stack unit
