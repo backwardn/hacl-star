@@ -642,8 +642,8 @@ void Hacl_Impl_MM_Exponent_montgomery_ladder_exponent(uint64_t *a)
     uint32_t bit0 = (uint32_t)255U - i;
     uint64_t bit = (uint64_t)(scalar[bit0 / (uint32_t)8U] >> bit0 % (uint32_t)8U & (uint8_t)1U);
     Hacl_Impl_MM_Exponent_cswap(bit, a, b);
-    Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(a, b, a);
-    Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(b, b, b);
+    Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(a, b, b);
+    Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(a, a, a);
     Hacl_Impl_MM_Exponent_cswap(bit, a, b);
   }
 }

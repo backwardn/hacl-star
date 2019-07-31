@@ -89,7 +89,7 @@ val montgomery_ladder_exponent_step0: a: felem -> b: felem -> Stack unit
   (requires fun h -> live h a /\ live h b /\ as_nat h a < prime /\ as_nat h b < prime /\ disjoint a b )
   (ensures fun h0 _ h1 -> modifies2 a b h0 h1 /\ as_nat h1 a < prime /\ as_nat h1 b < prime /\
     (
-      let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
+      let (r0D, r1D) = _exp_step0 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
       r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b)  /\
       as_nat h1 a < prime /\ as_nat h1 b < prime
     )
@@ -97,22 +97,16 @@ val montgomery_ladder_exponent_step0: a: felem -> b: felem -> Stack unit
 
 let montgomery_ladder_exponent_step0 a b = 
     let h0 = ST.get() in 
-  montgomery_multiplication_ecdsa_module a b a;
+  montgomery_multiplication_ecdsa_module a b b;
     let h1 = ST.get() in 
-    assert(as_nat h1 a = toDomain_ (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime));
+    assert(as_nat h1 b = toDomain_ (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime));
     lemmaToDomainFromDomain (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime);
-    assert(fromDomain_ (as_nat h1 a) = (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime));
-  montgomery_multiplication_ecdsa_module b b b;
+    assert(fromDomain_ (as_nat h1 b) = (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime));
+  montgomery_multiplication_ecdsa_module a a a ;
     let h2 = ST.get() in 
-    assert(fromDomain_ (as_nat h2 b) = fromDomain_ (toDomain_ (fromDomain_ (as_nat h0 b) * fromDomain_ (as_nat h0 b) % prime)));
-    lemmaToDomainFromDomain (fromDomain_ (as_nat h0 b) * fromDomain_ (as_nat h0 b) % prime);
-    assert(fromDomain_ (as_nat h2 b) = fromDomain_ (as_nat h0 b) * fromDomain_ (as_nat h0 b) % prime);
-
-  let (t0, t1) = _exp_step1 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
-  assert(t1 = fromDomain_(as_nat h0 b) * fromDomain_ (as_nat h0 b) % prime);
-  assert(t0 = fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime);
-  assert(t0 == fromDomain_ (as_nat h1 a));
-  assert(t1 == fromDomain_ (as_nat h2 b))
+    assert(fromDomain_ (as_nat h2 a) = fromDomain_ (toDomain_ (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 a) % prime)));
+    lemmaToDomainFromDomain (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 a) % prime);
+    assert(fromDomain_ (as_nat h2 a) = fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 a) % prime) 
 
 
 (* this piece of code is taken from Hacl.Curve25519 *)
@@ -135,14 +129,14 @@ let scalar_bit s n =
 inline_for_extraction noextract 
 val montgomery_ladder_exponent_step: a: felem -> b: felem ->scalar: lbuffer uint8 (size 32) ->   i:size_t{v i < 256} ->  Stack unit
   (requires fun h -> live h a  /\ live h b /\ live h scalar /\ as_nat h a < prime /\ as_nat h b < prime /\ disjoint a b)
-  (ensures fun h0 _ h1 -> modifies2 a b h0 h1 /\
+  (ensures fun h0 _ h1 -> modifies2 a b h0 h1  /\
     (
       let a_ = fromDomain_ (as_nat h0 a) in 
       let b_ = fromDomain_ (as_nat h0 b) in 
       let (r0D, r1D) = _exp_step (as_seq h0 scalar) (uint_v i) (a_, b_) in 
-      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b) /\
+      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b) /\ 
       as_nat h1 a < prime /\ as_nat h1 b < prime
-    )
+    ) 
   )  
 
 let montgomery_ladder_exponent_step a b scalar i = 
@@ -156,7 +150,7 @@ let montgomery_ladder_exponent_step a b scalar i =
   cswap bit a b;
     let h3 = ST.get() in 
 
-  assert(if uint_v bit = 0 
+  (*assert(if uint_v bit = 0 
     then 
       as_nat h1 a == as_nat h0 a /\ as_nat h1 b == as_nat h0 b 
     else
@@ -164,23 +158,31 @@ let montgomery_ladder_exponent_step a b scalar i =
 
   assert(
     if uint_v bit = 0 then 
-    let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
+    let (r0D, r1D) = _exp_step0 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
       r0D == fromDomain_ (as_nat h2 a) /\ r1D == fromDomain_ (as_nat h2 b) 
     else
-      let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 b)) (fromDomain_ (as_nat h0 a)) in 
+      let (r0D, r1D) = _exp_step0 (fromDomain_ (as_nat h0 b)) (fromDomain_ (as_nat h0 a)) in 
       r0D == fromDomain_ (as_nat h2 a) /\ r1D == fromDomain_ (as_nat h2 b));
 
   assert(if uint_v bit = 0 
     then  
-      let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
+      let (r0D, r1D) = _exp_step0 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
       fromDomain_ (as_nat h3 a) == r0D /\ fromDomain_ (as_nat h3 b) == r1D
     else
-      let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 b)) (fromDomain_ (as_nat h0 a)) in 
-      fromDomain_ (as_nat h3 a) == r1D /\ fromDomain_ (as_nat h3 b) == r0D);
-      
-   Hacl.Spec.ECDSA.lemma_swaped_steps (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b))
-
-
+      let (r0D, r1D) = _exp_step0 (fromDomain_ (as_nat h0 b)) (fromDomain_ (as_nat h0 a)) in 
+      fromDomain_ (as_nat h3 a) == r1D /\ fromDomain_ (as_nat h3 b) == r0D); *)
+       
+   Hacl.Spec.ECDSA.lemma_swaped_steps (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b));
+   assert(
+      let r0D_f, r1D_f = _exp_step (as_seq h0 scalar) (uint_v i) (fromDomain_ (as_nat h0 a), fromDomain_ (as_nat h0 b)) in 
+   
+      if uint_v bit = 0 then 
+      let (r0D, r1D) = _exp_step0 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
+      fromDomain_ (as_nat h3 a) == r0D /\ fromDomain_ (as_nat h3 b) == r1D /\ r0D == r0D_f /\ r1D == r1D_f
+    else
+      let (r0D, r1D) = _exp_step1 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
+      fromDomain_ (as_nat h3 a) == r0D /\ fromDomain_ (as_nat h3 b) == r1D /\ r0D == r0D_f /\ r1D == r1D_f)
+  
 
 inline_for_extraction noextract 
 val _montgomery_ladder_exponent: a: felem ->b: felem ->  scalar: lbuffer uint8 (size 32) -> Stack unit
@@ -232,13 +234,6 @@ let _montgomery_ladder_exponent a b scalar =
 	  Lib.LoopCombinators.unfold_repeati 256 (spec_exp h0) (acc h0) (uint_v i);
 	assert(acc h4 == Lib.LoopCombinators.repeati (uint_v i + 1) (spec_exp h0) (acc h0))
   )
-
-
-
-
-(*
-
-
 
 
 

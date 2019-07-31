@@ -64,9 +64,9 @@ let conditional_swap i p q =
 val lemma_swaped_steps: p: nat_prime -> q: nat_prime -> 
   Lemma (
     let (afterSwapP, afterSwapQ) = swap p q in 
-    let p1, q1 = _exp_step1 afterSwapP afterSwapQ in 
+    let p1, q1 = _exp_step0 afterSwapP afterSwapQ in 
     let p2, q2 = swap p1 q1 in 
-    let r0, r1 = _exp_step0 p q in 
+    let r0, r1 = _exp_step1 p q in 
     p2 == r0 /\ q2 == r1)
 
 let lemma_swaped_steps p q = ()
@@ -79,8 +79,8 @@ let _exp_step k i (p, q) =
   let bit = ith_bit k bit in 
   let open Lib.RawIntTypes in 
   if uint_to_nat bit = 0 then 
-      _exp_step1 p q 
-  else _exp_step0 p q  
+      _exp_step0 p q 
+  else _exp_step1 p q  
 
 
 val _exponent_spec: k: scalar -> tuple2 nat_prime nat_prime -> Tot (tuple2 nat_prime nat_prime)
@@ -92,6 +92,5 @@ let _exponent_spec k (p, q) =
 val exponent_spec: k: scalar -> a: nat_prime -> Tot nat_prime
 
 let exponent_spec k a = 
-    let b = 1 in 
     let a0, _ = _exponent_spec k (1, a) in 
     a0
