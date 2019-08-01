@@ -10,6 +10,9 @@ open Hacl.Spec.P256.Lemmas
 
 open FStar.Math.Lemmas
 
+let prime = prime256
+
+
 open FStar.Mul  
 #reset-options "--z3refresh --z3rlimit 300" 
 val lemma_norm_as_specification: xD: nat -> yD: nat -> zD: nat -> 

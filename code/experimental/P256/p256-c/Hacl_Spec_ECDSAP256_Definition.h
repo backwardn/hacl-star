@@ -6,21 +6,17 @@
  */
 
 #include "kremlib.h"
-#ifndef __FStar_H
-#define __FStar_H
+#ifndef __Hacl_Spec_ECDSAP256_Definition_H
+#define __Hacl_Spec_ECDSAP256_Definition_H
 
 
 #include "TestLib.h"
 #include "c/Lib_PrintBuffer.h"
 #include "FStar_UInt_8_16_32_64.h"
 
-extern uint64_t FStar_UInt64_eq_mask(uint64_t x0, uint64_t x1);
+typedef uint64_t *Hacl_Spec_ECDSAP256_Definition_felem;
 
-extern uint128_t FStar_UInt128_shift_right(uint128_t x0, uint32_t x1);
+typedef uint64_t *Hacl_Spec_ECDSAP256_Definition_widefelem;
 
-extern uint64_t FStar_UInt128_uint128_to_uint64(uint128_t x0);
-
-extern uint128_t FStar_UInt128_mul_wide(uint64_t x0, uint64_t x1);
-
-#define __FStar_H_DEFINED
+#define __Hacl_Spec_ECDSAP256_Definition_H_DEFINED
 #endif

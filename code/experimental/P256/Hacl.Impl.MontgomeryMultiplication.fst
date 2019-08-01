@@ -17,6 +17,7 @@ open Hacl.Spec.P256.Core
 
 open FStar.Mul
 
+noextract
 let prime = prime_p256_order
 
 #reset-options "--z3refresh --z3rlimit 200"

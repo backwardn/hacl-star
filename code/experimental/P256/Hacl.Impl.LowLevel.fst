@@ -228,7 +228,7 @@ let cmovznz4 cin x y r =
 
 #reset-options "--z3refresh --z3rlimit 200"
 
-val reduction_prime256_2prime256_impl: x: felem -> result: felem -> 
+val reduction_prime_2prime_impl: x: felem -> result: felem -> 
   Stack unit
     (requires fun h -> live h x /\ live h result /\ eq_or_disjoint x result)
     (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ 

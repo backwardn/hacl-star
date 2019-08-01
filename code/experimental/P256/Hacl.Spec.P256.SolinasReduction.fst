@@ -10,6 +10,8 @@ open Lib.Sequence
 
 open Hacl.Spec.P256.Core
 
+let prime = prime256
+
 let _uint32 = n: nat {n < pow2 32}
 
 inline_for_extraction noextract
