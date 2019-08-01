@@ -10,7 +10,7 @@
 #include <time.h>
 
 
-#include "p256-c/Hacl_Impl_MontgomeryMultiplication.h"
+#include "p256-c/Hacl_Impl_MM_Exponent.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,11 +93,20 @@ void print_uu_l (uint64_t* a, int len, bool div)
 int main()
 {
    uint64_t* a = (uint64_t *) malloc (sizeof (uint64_t) * 4);
-   a[0] = 123123123123123;
+   a[0] = 101;
+   a[1] = 0;
+   a[2] = 0;
+   a[3] = 0;
+
    uint64_t* b = (uint64_t *) malloc (sizeof (uint64_t) * 4);
-   b[0] = 523482342342344;
+   b[0] = 100;
+   b[1] = 0;
+   b[2] = 0;
+   b[3] = 0;
+   
+   
    uint64_t* result = (uint64_t *) malloc (sizeof (uint64_t) * 4);
-   Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_test(a, b, result);
+   Hacl_Impl_MM_Exponent_multPower(a, b, result);
    print_uu(result);
 
 

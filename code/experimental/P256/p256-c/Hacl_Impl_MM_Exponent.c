@@ -673,7 +673,7 @@ void Hacl_Impl_MM_Exponent_montgomery_ladder_exponent(uint64_t *r)
   scalar[29U] = (uint8_t)255U;
   scalar[30U] = (uint8_t)255U;
   scalar[31U] = (uint8_t)255U;
-  for (uint32_t i = (uint32_t)0U; i < (uint32_t)256; i = i + (uint32_t)1U)
+  for (uint32_t i = (uint32_t)0U; i < (uint32_t)256U; i = i + (uint32_t)1U)
   {
     uint32_t bit0 = (uint32_t)255U - i;
     uint64_t bit = (uint64_t)(scalar[bit0 / (uint32_t)8U] >> bit0 % (uint32_t)8U & (uint8_t)1U);
@@ -698,8 +698,13 @@ void Hacl_Impl_MM_Exponent_fromDomainImpl(uint64_t *a, uint64_t *result)
 void Hacl_Impl_MM_Exponent_multPower(uint64_t *a, uint64_t *b, uint64_t *result)
 {
   uint64_t tempB1[4U] = { 0U };
+  uint64_t buffFromDB[4U] = { 0U };
   Hacl_Impl_MM_Exponent_fromDomainImpl(a, tempB1);
+  Hacl_Impl_MM_Exponent_fromDomainImpl(b, buffFromDB);
+  Hacl_Impl_MM_Exponent_fromDomainImpl(buffFromDB, buffFromDB);
   Hacl_Impl_MM_Exponent_montgomery_ladder_exponent(tempB1);
-  Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(tempB1, b, result);
+  Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_ecdsa_module(tempB1,
+    buffFromDB,
+    result);
 }
 

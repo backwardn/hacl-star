@@ -193,7 +193,9 @@ val _montgomery_ladder_exponent: a: felem ->b: felem ->  scalar: lbuffer uint8 (
       let a_ = fromDomain_ (as_nat h0 a) in 
       let b_ = fromDomain_ (as_nat h0 b) in 
       let (r0D, r1D) = _exponent_spec (as_seq h0 scalar) (a_, b_) in 
-      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b)
+      r0D == fromDomain_ (as_nat h1 a) /\ r1D == fromDomain_ (as_nat h1 b) /\
+      as_nat h1 a < prime /\
+      as_nat h1 b < prime 
   )
   )
 
@@ -263,7 +265,7 @@ let upload_one b =
 inline_for_extraction noextract 
 val upload_scalar: b: lbuffer uint8 (size 32) -> Stack unit 
   (requires fun h -> live h b)
-  (ensures fun h0 _ h1 -> True)
+  (ensures fun h0 _ h1 -> modifies1 b h0 h1 /\ scalar_as_nat h1 b == prime - 2 /\ as_seq h1 b == genScalar() )
 
 let upload_scalar b = 
   upd b (size 0) (u8 79);
@@ -297,47 +299,85 @@ let upload_scalar b =
   upd b (size 28) (u8 255);
   upd b (size 29) (u8 255);
   upd b (size 30) (u8 255);
-  upd b (size 31) (u8 255)
+  upd b (size 31) (u8 255);
+  admit()
 
 
 val montgomery_ladder_exponent: a: felem -> Stack unit 
-  (requires fun h -> True)
-  (ensures fun h0 _ h1 -> True)
+  (requires fun h -> live h a /\ as_nat h a < prime)
+  (ensures fun h0 _ h1 -> modifies1 a h0 h1 /\ 
+    (
+      let b_ = fromDomain_ (as_nat h0 a) in 
+      let r0D = exponent_spec b_ in 
+      fromDomain_ (as_nat h1 a) == r0D  /\
+      as_nat h1 a < prime
+    )
+)
 
 let montgomery_ladder_exponent r = 
   push_frame(); 
     let p = create (size 4) (u64 0) in 
     let scalar = create (size 32) (u8 0) in 
-    upload_one_montg_form p;
+      let h0 = ST.get() in 
+    upload_one_montg_form p; 
     upload_scalar scalar;
+      let h1 = ST.get() in 
     _montgomery_ladder_exponent p r scalar;
+      let h2 = ST.get() in 
+      lemmaToDomainFromDomain 1;
+      assert(
+	let b_ = fromDomain_ (as_nat h0 r) in 
+	let (r0D, r1D) = _exponent_spec (as_seq h1 scalar) (1, b_) in 
+	r0D == fromDomain_ (as_nat h2 p));     
+      assert(as_nat h2 p < prime);
     copy r p;
+      let h3 = ST.get() in 
+      assert(as_nat h3 r == as_nat h2 p);
+      assert(as_nat h3 r < prime);
+
+       assert(
+	let b_ = fromDomain_ (as_nat h0 r) in 
+	let (r0D, r1D) = _exponent_spec (as_seq h1 scalar) (1, b_) in 
+	r0D == fromDomain_ (as_nat h3 r));    
   pop_frame()  
 
+
 val fromDomainImpl: a: felem -> result: felem -> Stack unit
-  (requires fun h -> True)
-  (ensures fun h0 _ h1 -> True)
+  (requires fun h -> live h a /\ live h result /\ as_nat h a < prime)
+  (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ as_nat h1 result == fromDomain_ (as_nat h0 a))
 
 let fromDomainImpl a result = 
   push_frame();
     let one = create (size 4) (u64 0) in 
     upload_one one;
+      let h1 = ST.get() in 
     montgomery_multiplication_ecdsa_module one a result;
+      let h2 = ST.get() in 
+      assert(as_nat h2 result = fromDomain_(as_nat h1 a));
   pop_frame()   
 
 
 val multPower: a: felem -> b: felem ->  result: felem -> Stack unit 
-  (requires fun h -> True)
-  (ensures fun h0 _ h1 -> True)
+  (requires fun h -> live h a /\ live h b /\ live h result /\ as_nat h a < prime /\ as_nat h b < prime)
+  (ensures fun h0 _ h1 -> modifies1 result h0 h1)
 
 
 let multPower a b result = 
   push_frame();
     let tempB1 = create (size 4) (u64 0) in 
     let buffFromDB = create (size 4) (u64 0) in 
-  fromDomainImpl a tempB1;
-  montgomery_ladder_exponent tempB1;
-  fromDomainImpl b buffFromDB;
-  fromDomainImpl buffFromDB buffFromDB;
-  montgomery_multiplication_ecdsa_module tempB1 buffFromDB result;
+      let h0 = ST.get() in 
+    fromDomainImpl a tempB1;
+    fromDomainImpl b buffFromDB;
+    fromDomainImpl buffFromDB buffFromDB;
+      let h1 = ST.get() in 
+      assert(modifies2 tempB1 buffFromDB h0 h1);
+      modifies2_is_modifies3 result tempB1 buffFromDB h0 h1;
+      assert(modifies3 result tempB1 buffFromDB h0 h1);
+    montgomery_ladder_exponent tempB1;
+    montgomery_multiplication_ecdsa_module tempB1 buffFromDB result;
+      let h2 = ST.get() in 
+      assert(modifies2 tempB1 result h1 h2);
+      modifies2_is_modifies3 buffFromDB tempB1 result h1 h2;
+      assert(modifies3 tempB1 buffFromDB result h0 h2);
   pop_frame()

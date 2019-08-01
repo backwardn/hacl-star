@@ -89,8 +89,48 @@ let _exponent_spec k (p, q) =
   Lib.LoopCombinators.repeati 256  (_exp_step k) (p, q)
 
 
-val exponent_spec: k: scalar -> a: nat_prime -> Tot nat_prime
+val genScalar: unit -> Tot (lseq uint8 32)
 
-let exponent_spec k a = 
-    let a0, _ = _exponent_spec k (1, a) in 
+let genScalar () = 
+    let s = Lib.Sequence.create 32 (u8 0) in 
+    let s = upd s 0 (u8 79) in 
+    let s = upd s 1 (u8 37) in
+    let s = upd s 2 (u8 99) in
+    let s = upd s 3 (u8 252) in
+    let s = upd s 4 (u8 194) in
+    let s = upd s 5 (u8 202) in
+    let s = upd s 6 (u8 185) in
+    let s = upd s 7 (u8 243) in
+    let s = upd s 8 (u8 132) in
+    let s = upd s 9 (u8 158) in
+    let s = upd s 10  (u8 23) in
+    let s = upd s 11  (u8 167) in
+    let s = upd s 12  (u8 173) in
+    let s = upd s 13  (u8 250) in
+    let s = upd s 14  (u8 230) in
+    let s = upd s 15  (u8 188) in
+    let s = upd s 16  (u8 255) in
+    let s = upd s 17  (u8 255) in
+    let s = upd s 18  (u8 255) in
+    let s = upd s 19  (u8 255) in
+    let s = upd s 20  (u8 255) in
+    let s = upd s 21  (u8 255) in
+    let s = upd s 22  (u8 255) in
+    let s = upd s 23  (u8 255) in
+    let s = upd s 24  (u8 0) in
+    let s = upd s 25  (u8 0) in
+    let s = upd s 26  (u8 0) in
+    let s = upd s 27  (u8 0) in
+    let s = upd s 28  (u8 255) in
+    let s = upd s 29  (u8 255) in
+    let s = upd s 30  (u8 255) in
+    let s = upd s 31  (u8 255) in 
+    s
+
+
+val exponent_spec: a: nat_prime -> Tot nat_prime
+
+let exponent_spec a = 
+    let scalar = genScalar() in 
+    let a0, _ = _exponent_spec scalar (1, a) in 
     a0
