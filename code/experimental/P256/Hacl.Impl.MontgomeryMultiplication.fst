@@ -433,6 +433,14 @@ let reduction_prime_p256_order_2prime_p256_order_with_carry_impl_5 x result prim
     cmovznz4 carry tempBuffer x result;
  pop_frame()   
 
+
+
+assume val reduction_prime_2prime_order: result: felem -> prime_p256_orderBuffer: felem -> 
+  Stack unit 
+    (requires fun h -> True)
+    (ensures fun h0 _ h1 -> True)  
+
+
 val lemma_montgomery_mult_2: a: nat{a < prime_p256_order} -> b: nat {b < prime_p256_order} -> 
   Lemma (
     (a * b *  modp_inv2_prime (pow2 64) prime_p256_order  * 

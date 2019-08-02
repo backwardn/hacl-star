@@ -5,22 +5,30 @@
   KreMLin version: f534ac02
  */
 
-#include "kremlib.h"
-#ifndef __FStar_H
-#define __FStar_H
+#include "C_Endianness.h"
 
+uint32_t index_32_be(uint8_t *b, uint32_t i)
+{
+  return load32_be(b + (uint32_t)4U * i);
+}
 
-#include "TestLib.h"
-#include "c/Lib_PrintBuffer.h"
-#include "FStar_UInt_8_16_32_64.h"
+uint32_t index_32_le(uint8_t *b, uint32_t i)
+{
+  return load32_le(b + (uint32_t)4U * i);
+}
 
-extern uint64_t FStar_UInt64_eq_mask(uint64_t x0, uint64_t x1);
+uint64_t index_64_be(uint8_t *b, uint32_t i)
+{
+  return load64_be(b + (uint32_t)8U * i);
+}
 
-extern uint128_t FStar_UInt128_shift_right(uint128_t x0, uint32_t x1);
+uint64_t index_64_le(uint8_t *b, uint32_t i)
+{
+  return load64_le(b + (uint32_t)8U * i);
+}
 
-extern uint64_t FStar_UInt128_uint128_to_uint64(uint128_t x0);
+void upd_32_be(uint8_t *b, uint32_t i, uint32_t v1)
+{
+  store32_be(b + (uint32_t)4U * i, v1);
+}
 
-extern uint128_t FStar_UInt128_mul_wide(uint64_t x0, uint64_t x1);
-
-#define __FStar_H_DEFINED
-#endif

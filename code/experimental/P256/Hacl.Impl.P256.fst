@@ -408,10 +408,6 @@ let copy_point_conditional x3_out y3_out z3_out p maskPoint =
   copy_conditional y3_out p_y mask;
   copy_conditional z3_out p_z mask
 
- 
-val compare_felem: a: felem -> b: felem -> Stack uint64
-  (requires fun h -> live h a /\ live h b /\ as_nat h a < prime /\ as_nat h b < prime ) 
-  (ensures fun h0 r h1 -> modifies0 h0 h1 /\ r == compare_felem_seq (as_seq h0 a) (as_seq h0 b)) 
 
 let compare_felem a b = 
   let a_0 = index a (size 0) in 
@@ -1218,7 +1214,39 @@ let scalarMultiplication p result scalar tempBuffer  =
     assert(modifies3 p result tempBuffer h0 h2);
     assert(modifies3 p result tempBuffer h2 h4);
     assert(modifies3 p result tempBuffer h0 h4)
+
+val uploadBasePoint: p: point -> Stack unit 
+  (requires fun h -> live h p)
+  (ensures fun h0 _ h1 -> modifies1 p h0 h1)
+
+let uploadBasePoint p = 
+  upd p (size 0) (u64 8784043285714375740);
+  upd p (size 1) (u64 8483257759279461889);
+  upd p (size 2) (u64 8789745728267363600);
+  upd p (size 3) (u64 1770019616739251654);
   
+  upd p (size 4) (u64 15992936863339206154);
+  upd p (size 5) (u64 10037038012062884956);
+  upd p (size 6) (u64 15197544864945402661);
+  upd p (size 7) (u64 9615747158586711429);
+
+  upd p (size 8) (u64 1);
+  upd p (size 9) (u64 18446744069414584320);
+  upd p (size 10) (u64 18446744073709551615);
+  upd p (size 11) (u64 4294967294)
+
+
+
+let secretToPublic result scalar tempBuffer = 
+  push_frame(); 
+    let basePoint = create (size 12) (u64 0) in 
+    uploadBasePoint basePoint;
+    let q = sub tempBuffer (size 0) (size 12) in 
+    zero_buffer q;
+    montgomery_ladder q basePoint scalar tempBuffer;
+    norm q result tempBuffer; 
+  pop_frame()  
+
 
 let isPointAtInfinity p = 
   let z0 = index p (size 8) in 
@@ -1378,4 +1406,5 @@ let isPointOnCurve p =
      let z = not(eq_0_u64 r) in 
      pop_frame();
      z
+
 

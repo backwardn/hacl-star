@@ -6,21 +6,27 @@
  */
 
 #include "kremlib.h"
-#ifndef __FStar_H
-#define __FStar_H
+#ifndef __C_H
+#define __C_H
 
 
 #include "TestLib.h"
 #include "c/Lib_PrintBuffer.h"
 #include "FStar_UInt_8_16_32_64.h"
 
-extern uint64_t FStar_UInt64_eq_mask(uint64_t x0, uint64_t x1);
+extern void portable_exit(int32_t x0);
 
-extern uint128_t FStar_UInt128_shift_right(uint128_t x0, uint32_t x1);
+extern intptr_t nullptr;
 
-extern uint64_t FStar_UInt128_uint128_to_uint64(uint128_t x0);
+extern char char_of_uint8(uint8_t x0);
 
-extern uint128_t FStar_UInt128_mul_wide(uint64_t x0, uint64_t x1);
+extern uint8_t uint8_of_char(char x0);
 
-#define __FStar_H_DEFINED
+extern bool uu___is_EXIT_SUCCESS(exit_code x0);
+
+extern bool uu___is_EXIT_FAILURE(exit_code x0);
+
+extern void print_bytes(uint8_t *x0, uint32_t x1);
+
+#define __C_H_DEFINED
 #endif

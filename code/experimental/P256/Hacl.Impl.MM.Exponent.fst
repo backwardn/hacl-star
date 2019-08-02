@@ -25,8 +25,6 @@ open Lib.Loops
 
 #reset-options "--z3refresh --z3rlimit 200"
 
-noextract
-let prime = prime_p256_order
 
 (*
 assume val lemmaFromDomainToDomain:  a: nat -> Lemma (toDomain_ (fromDomain_ a)  == a)
@@ -199,7 +197,7 @@ val _montgomery_ladder_exponent: a: felem ->b: felem ->  scalar: lbuffer uint8 (
   )
   )
 
-
+  
 let _montgomery_ladder_exponent a b scalar = 
   let h0 = ST.get() in 
 
@@ -261,12 +259,6 @@ let upload_one b =
   upd b (size 2) (u64 0);
   upd b (size 3) (u64 0)
 
-
-inline_for_extraction noextract 
-val upload_scalar: b: lbuffer uint8 (size 32) -> Stack unit 
-  (requires fun h -> live h b)
-  (ensures fun h0 _ h1 -> modifies1 b h0 h1 /\ scalar_as_nat h1 b == prime - 2 /\ as_seq h1 b == genScalar() )
-
 let upload_scalar b = 
   upd b (size 0) (u8 79);
   upd b (size 1) (u8 37);
@@ -303,17 +295,6 @@ let upload_scalar b =
   admit()
 
 
-val montgomery_ladder_exponent: a: felem -> Stack unit 
-  (requires fun h -> live h a /\ as_nat h a < prime)
-  (ensures fun h0 _ h1 -> modifies1 a h0 h1 /\ 
-    (
-      let b_ = fromDomain_ (as_nat h0 a) in 
-      let r0D = exponent_spec b_ in 
-      fromDomain_ (as_nat h1 a) == r0D  /\
-      as_nat h1 a < prime
-    )
-)
-
 let montgomery_ladder_exponent r = 
   push_frame(); 
     let p = create (size 4) (u64 0) in 
@@ -342,10 +323,6 @@ let montgomery_ladder_exponent r =
   pop_frame()  
 
 
-val fromDomainImpl: a: felem -> result: felem -> Stack unit
-  (requires fun h -> live h a /\ live h result /\ as_nat h a < prime)
-  (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ as_nat h1 result == fromDomain_ (as_nat h0 a))
-
 let fromDomainImpl a result = 
   push_frame();
     let one = create (size 4) (u64 0) in 
@@ -355,11 +332,6 @@ let fromDomainImpl a result =
       let h2 = ST.get() in 
       assert(as_nat h2 result = fromDomain_(as_nat h1 a));
   pop_frame()   
-
-
-val multPower: a: felem -> b: felem ->  result: felem -> Stack unit 
-  (requires fun h -> live h a /\ live h b /\ live h result /\ as_nat h a < prime /\ as_nat h b < prime)
-  (ensures fun h0 _ h1 -> modifies1 result h0 h1)
 
 
 let multPower a b result = 
@@ -380,4 +352,20 @@ let multPower a b result =
       assert(modifies2 tempB1 result h1 h2);
       modifies2_is_modifies3 buffFromDB tempB1 result h1 h2;
       assert(modifies3 tempB1 buffFromDB result h0 h2);
+  pop_frame()
+
+
+
+let multPowerPartial a b result = 
+  push_frame();
+    let buffFromDB = create (size 4) (u64 0) in 
+      let h0 = ST.get() in 
+    fromDomainImpl b buffFromDB;
+    fromDomainImpl buffFromDB buffFromDB;
+      let h1 = ST.get() in 
+    montgomery_multiplication_ecdsa_module a buffFromDB result;
+      let h2 = ST.get() in 
+      assert(modifies2 a result h1 h2);
+      modifies2_is_modifies3 buffFromDB a result h1 h2;
+      assert(modifies3 a buffFromDB result h0 h2);
   pop_frame()
