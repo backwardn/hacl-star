@@ -197,3 +197,5 @@ val pow: a:nat -> b:nat -> res:nat
 let rec pow a b =
   if b = 0 then 1
   else a * (pow a (b - 1))
+
+

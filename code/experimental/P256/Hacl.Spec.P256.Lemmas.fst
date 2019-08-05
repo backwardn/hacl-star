@@ -63,7 +63,7 @@ let ( +% ) a b = (a + b) % prime256
 noextract
 let ( -% ) a b = (a - b) % prime256
 noextract
-let ( *% ) a b prime = (a * b) % prime256
+let ( *% ) a b prime = (a * b) % prime
 
 noextract
 let rec exp (e: nat) (n:nat {n > 0}) (prime: pos) : Tot (r: nat) (decreases n)  =
