@@ -446,12 +446,43 @@ let reduction_prime_p256_order_2prime_p256_order_with_carry_impl_5 x result prim
  pop_frame()   
 
 
+val lemma_reduction1: a: nat {a < pow2 256} -> 
+  r: nat{if a >= prime_p256_order then r = a - prime_p256_order else r = a} -> 
+  Lemma (r = a % prime_p256_order)
 
-assume val reduction_prime_2prime_order: result: felem -> prime_p256_orderBuffer: felem -> 
+let lemma_reduction1 a r = 
+  let prime256 = prime_p256_order in 
+  assert_norm (pow2 256 - prime_p256_order < prime_p256_order);
+  assert(if a >= prime_p256_order then a - prime256 < prime_p256_order else True);
+  assert(if a >= prime256 then r < prime256 else True);
+  assert(if a >= prime256 then r = a % prime256 else True);
+  assert(if a < prime256 then r < prime256 else True);
+  assert(if a < prime256 then r = a % prime256 else True);
+  assert(r = a % prime256)
+
+
+
+val reduction_prime_2prime_order: x: felem -> result: felem -> 
   Stack unit 
-    (requires fun h -> True)
-    (ensures fun h0 _ h1 -> True)  
+    (requires fun h -> live h x /\ live h result /\ eq_or_disjoint x result)
+    (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ 
+      as_nat h1 result == as_nat h0 x % prime_p256_order
+    )  
 
+let reduction_prime_2prime_order x result  = 
+  push_frame();
+    let tempBuffer = create (size 4) (u64 0) in 
+    recall_contents prime256order_buffer (Lib.Sequence.of_list p256_order_prime_list);
+      let h0 = ST.get() in 
+    let c = sub4_il x prime256order_buffer tempBuffer in 
+      let h1 = ST.get() in 
+      assert(as_nat h1 tempBuffer = as_nat h0 x - prime_p256_order + uint_v c * pow2 256);
+      assert(let x = as_nat h0 x in if x < prime_p256_order then uint_v c = 1 else uint_v c = 0);
+    cmovznz4 c tempBuffer x result ;
+    let h2 = ST.get() in 
+    lemma_reduction1 (as_nat h0 x) (as_nat h2 result);
+  pop_frame()  
+  
 
 val lemma_montgomery_mult_2: a: nat{a < prime_p256_order} -> b: nat {b < prime_p256_order} -> 
   Lemma (

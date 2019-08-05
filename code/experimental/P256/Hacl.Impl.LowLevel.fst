@@ -255,7 +255,7 @@ let lemma_reduction1 a r =
 
 
 
-let reduction_prime256_2prime256_impl x result = 
+let reduction_prime_2prime_impl x result = 
   push_frame();
   let tempBuffer = create (size 4) (u64 0) in 
     recall_contents prime256_buffer (Lib.Sequence.of_list p256_prime_list);
