@@ -1215,25 +1215,42 @@ let scalarMultiplication p result scalar tempBuffer  =
     assert(modifies3 p result tempBuffer h2 h4);
     assert(modifies3 p result tempBuffer h0 h4)
 
+
+
+
+
+
+
+
+
+
+
+
 val uploadBasePoint: p: point -> Stack unit 
   (requires fun h -> live h p)
-  (ensures fun h0 _ h1 -> modifies1 p h0 h1)
+  (ensures fun h0 _ h1 -> modifies1 p h0 h1 /\ 
+    as_nat h1 (gsub p (size 0) (size 4)) < prime256 /\ 
+    as_nat h1 (gsub p (size 4) (size 4)) < prime256 /\
+    as_nat h1 (gsub p (size 8) (size 4)) < prime256 )
 
 let uploadBasePoint p = 
+    let h0 = ST.get() in 
   upd p (size 0) (u64 8784043285714375740);
   upd p (size 1) (u64 8483257759279461889);
   upd p (size 2) (u64 8789745728267363600);
   upd p (size 3) (u64 1770019616739251654);
-  
+  assert_norm (8784043285714375740 + pow2 64 * 8483257759279461889 + pow2 64 * pow2 64 * 8789745728267363600 + pow2 64 * pow2 64 * pow2 64 * 1770019616739251654 < prime256); 
   upd p (size 4) (u64 15992936863339206154);
   upd p (size 5) (u64 10037038012062884956);
   upd p (size 6) (u64 15197544864945402661);
   upd p (size 7) (u64 9615747158586711429);
-
+  assert_norm(15992936863339206154 + pow2 64 * 10037038012062884956 + pow2 64 * pow2 64 * 15197544864945402661 + pow2 64 * pow2 64 * pow2 64 * 9615747158586711429 < prime256);
+  
   upd p (size 8) (u64 1);
   upd p (size 9) (u64 18446744069414584320);
   upd p (size 10) (u64 18446744073709551615);
-  upd p (size 11) (u64 4294967294)
+  upd p (size 11) (u64 4294967294);
+  assert_norm (1 + pow2 64 * 18446744069414584320 + pow2 64 * pow2 64 * 18446744073709551615 + pow2 64 * pow2 64 * pow2 64 * 4294967294 < prime256)
 
 
 
@@ -1241,11 +1258,15 @@ let secretToPublic result scalar tempBuffer =
   push_frame(); 
     let basePoint = create (size 12) (u64 0) in 
     uploadBasePoint basePoint;
+    
     let q = sub tempBuffer (size 0) (size 12) in 
-    zero_buffer q;
-    montgomery_ladder q basePoint scalar tempBuffer;
-    norm q result tempBuffer; 
+    let buff = sub tempBuffer (size 12) (size 88) in 
+    
+    zero_buffer q; 
+    montgomery_ladder q basePoint scalar buff; 
+    norm q result buff;  
   pop_frame()  
+
 
 
 let isPointAtInfinity p = 
@@ -1383,7 +1404,7 @@ let lemma_modular_multiplication_p256_2_d a b =
 
 
 let isPointOnCurve p = 
-   push_frame();
+   push_frame(); 
      let y2Buffer = create (size 4) (u64 0) in 
      let xBuffer = create (size 4) (u64 0) in 
        let h0 = ST.get() in 
@@ -1406,5 +1427,4 @@ let isPointOnCurve p =
      let z = not(eq_0_u64 r) in 
      pop_frame();
      z
-
 

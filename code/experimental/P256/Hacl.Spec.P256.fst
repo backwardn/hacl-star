@@ -9,6 +9,7 @@ open Lib.IntTypes
 open Lib.Sequence
 
 
+let prime = prime256
 noextract
 let _point_double  (p:point_nat) :  (p:point_nat) =
   let x, y, z = p in 
@@ -137,3 +138,12 @@ val isPointAtInfinity: p: point_nat -> Tot bool
 let isPointAtInfinity p = 
     let (x, y, z) = p in 
     z = 0
+
+
+val isPointOnCurve: p: point_nat -> Tot bool
+
+let isPointOnCurve p = 
+  let (x, y, z) = p in 
+  if (y * y) % prime = (x * x * x - 3 * x - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime then 
+  true
+  else false

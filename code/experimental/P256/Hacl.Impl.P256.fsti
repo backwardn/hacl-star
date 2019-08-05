@@ -160,11 +160,11 @@ val scalarMultiplication: p: point -> result: point ->
   )
 ) 
 
+
 val secretToPublic: result: point -> scalar: lbuffer uint8 (size 32) -> 
  tempBuffer: lbuffer uint64 (size 100) ->
   Stack unit
-    (
-      requires fun h -> 
+    (requires fun h -> 
       live h result /\ live h scalar /\ live h tempBuffer /\
       LowStar.Monotonic.Buffer.all_disjoint [loc tempBuffer; loc scalar; loc result]
     )
@@ -173,15 +173,25 @@ val secretToPublic: result: point -> scalar: lbuffer uint8 (size 32) ->
   )  
 
 
+
 val isPointAtInfinity: p: point -> Stack bool
   (requires fun h -> live h p)
-  (ensures fun h0 _ h1 -> modifies0 h0 h1) 
+  (ensures fun h0 r h1 -> modifies0 h0 h1 /\ 
+    (
+      let x = as_nat h0 (gsub p (size 0) (size 4)) in 
+      let y = as_nat h0 (gsub p (size 4) (size 4)) in 
+      let z = as_nat h0 (gsub p (size 8) (size 4)) in 
+      r == isPointAtInfinity (x, y, z)
+    )
+  ) 
 
+
+(* after norm *)
 val isPointOnCurve: p: point -> Stack bool
   (requires fun h -> live h p /\    
     as_nat h (gsub p (size 0) (size 4)) < prime /\ 
     as_nat h (gsub p (size 4) (size 4)) < prime /\
-    as_nat h (gsub p (size 8) (size 4)) < prime)
+    as_nat h (gsub p (size 8) (size 4)) == 1)
 
   (ensures fun h0 r h1 ->      
     modifies0 h0 h1 /\ 
@@ -190,6 +200,8 @@ val isPointOnCurve: p: point -> Stack bool
       let y = gsub p (size 4) (size 4) in 
       let x_ = as_nat h0 x in  if r = false then (as_nat h0 y) * (as_nat h0 y) % prime <>  (x_ * x_ * x_ - 3 * x_ - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime
        else
-       (as_nat h0 y) * (as_nat h0 y) % prime == (x_ * x_ * x_ - 3 * x_ - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime))
-
-
+       (as_nat h0 y) * (as_nat h0 y) % prime == (x_ * x_ * x_ - 3 * x_ - 41058363725152142129326129780047268409114441015993725554835256314039467401291) % prime) /\
+  r == isPointOnCurve (
+  as_nat h1 (gsub p (size 0) (size 4)), as_nat h1 (gsub p (size 4) (size 4)), as_nat h1 (gsub p (size 8) (size 4))
+  ) 
+)
