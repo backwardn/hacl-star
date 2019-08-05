@@ -131,3 +131,9 @@ let scalar_multiplication k p =
   let q, f = montgomery_ladder_spec k (pai, p) in 
   _norm q
 
+
+val isPointAtInfinity: p: point_nat -> Tot bool
+
+let isPointAtInfinity p = 
+    let (x, y, z) = p in 
+    z = 0

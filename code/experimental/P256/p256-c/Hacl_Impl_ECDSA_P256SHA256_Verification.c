@@ -442,8 +442,17 @@ Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_round(
   Hacl_Impl_MontgomeryMultiplication_shift8(t3, round);
 }
 
-extern void
-Hacl_Impl_MontgomeryMultiplication_reduction_prime_2prime_order(uint64_t *x0, uint64_t *x1);
+static void
+Hacl_Impl_MontgomeryMultiplication_reduction_prime_2prime_order(uint64_t *x, uint64_t *result)
+{
+  uint64_t tempBuffer[4U] = { 0U };
+  uint64_t
+  c =
+    Hacl_Impl_LowLevel_sub4_il(x,
+      Hacl_Impl_MontgomeryMultiplication_prime256order_buffer,
+      tempBuffer);
+  Hacl_Impl_LowLevel_cmovznz4(c, tempBuffer, x, result);
+}
 
 static uint64_t Hacl_Impl_MontgomeryMultiplication_upload_k0()
 {
@@ -591,21 +600,22 @@ bool Hacl_Impl_ECDSA_P256SHA256_Verification_isCoordinateValid(uint64_t *p)
   carryY = Hacl_Impl_LowLevel_sub4_il(y, Hacl_Impl_LowLevel_prime256_buffer, tempBuffer);
   uint64_t
   carryZ = Hacl_Impl_LowLevel_sub4_il(z, Hacl_Impl_LowLevel_prime256_buffer, tempBuffer);
-  bool lessX = carryX == (uint64_t)0U;
-  bool lessY = carryY == (uint64_t)0U;
-  bool lessZ = carryZ == (uint64_t)0U;
-  return lessX && lessY && lessZ;
+  bool lessX = carryX == (uint64_t)1U;
+  bool lessY = carryY == (uint64_t)1U;
+  bool lessZ = carryZ == (uint64_t)1U;
+  bool r = lessX && lessY && lessZ;
+  return r;
 }
 
-bool
-Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne(
-  uint64_t *f,
-  uint64_t *order
-)
+bool Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne(uint64_t *f)
 {
   uint64_t tempBuffer[4U] = { 0U };
-  uint64_t carry = Hacl_Impl_LowLevel_sub4(f, order, tempBuffer);
-  bool less = carry == (uint64_t)0U;
+  uint64_t
+  carry =
+    Hacl_Impl_LowLevel_sub4_il(f,
+      Hacl_Impl_MontgomeryMultiplication_prime256order_buffer,
+      tempBuffer);
+  bool less = carry == (uint64_t)1U;
   uint64_t f0 = f[0U];
   uint64_t f1 = f[1U];
   uint64_t f2 = f[2U];
@@ -619,7 +629,8 @@ Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne(
   uint64_t b = (uint64_t)0U;
   bool z3_zero = f3 == b;
   bool more = z0_zero && z1_zero && z2_zero && z3_zero;
-  return less && more;
+  bool result = less && !more;
+  return result;
 }
 
 bool
@@ -796,17 +807,14 @@ Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
       else
       {
         bool
-        isRCorrect =
-          Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne(r,
-            (uint64_t *)order);
+        isRCorrect = Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne(r);
         if (isRCorrect == false)
           return false;
         else
         {
           bool
           isSCorrect =
-            Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne(s1,
-              (uint64_t *)order);
+            Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne(s1);
           if (isSCorrect == false)
             return false;
           else

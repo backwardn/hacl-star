@@ -1015,7 +1015,12 @@ void Hacl_Impl_LowLevel_cmovznz4(uint64_t cin, uint64_t *x, uint64_t *y, uint64_
   r[3U] = r3;
 }
 
-extern void Hacl_Impl_LowLevel_reduction_prime_2prime_impl(uint64_t *x0, uint64_t *x1);
+static void Hacl_Impl_LowLevel_reduction_prime_2prime_impl(uint64_t *x, uint64_t *result)
+{
+  uint64_t tempBuffer[4U] = { 0U };
+  uint64_t c = Hacl_Impl_LowLevel_sub4_il(x, Hacl_Impl_LowLevel_prime256_buffer, tempBuffer);
+  Hacl_Impl_LowLevel_cmovznz4(c, tempBuffer, x, result);
+}
 
 static void Hacl_Impl_LowLevel_shift_256_impl(uint64_t *i, uint64_t *o)
 {

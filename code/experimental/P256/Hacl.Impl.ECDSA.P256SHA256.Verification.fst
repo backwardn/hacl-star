@@ -14,40 +14,63 @@ open Hacl.Spec.P256.MontgomeryMultiplication
 open Hacl.Impl.MontgomeryMultiplication
 open Hacl.Impl.MM.Exponent
 open Hacl.Spec.P256.Core
+open Hacl.Spec.ECDSAP256.Definition
 
+
+(* checks whether the coordinates are valid = 
+   all of them are less than prime 
+*) 
 val isCoordinateValid: p: lbuffer uint64 (size 12) -> Stack bool 
   (requires fun h -> live h p)
-  (ensures fun h0 _ h1 -> h0 == h1 /\
-    as_nat h1 (gsub p (size 0) (size 4)) < prime /\ 
-    as_nat h1 (gsub p (size 4) (size 4)) < prime /\
-    as_nat h1 (gsub p (size 8) (size 4)) < prime
-  )
+  (ensures fun h0 r h1 -> modifies0 h0 h1  /\ 
+    (
+      let x = gsub p (size 0) (size 4) in 
+      let y = gsub p (size 4) (size 4) in 
+      let z = gsub p (size 8) (size 4) in 
+      r = true ==> as_nat h0 x < prime256 /\ as_nat h0 y < prime256 /\ as_nat h0 z < prime256
+  )  
+)
 
+#reset-options "--z3refresh --z3rlimit 300"
+
+open FStar.Mul 
 
 let isCoordinateValid p = 
   push_frame();
     let tempBuffer = create (size 4) (u64 0) in 
+    recall_contents prime256_buffer (Lib.Sequence.of_list p256_prime_list);
     let x = sub p (size 0) (size 4) in 
     let y = sub p (size 4) (size 4) in 
     let z = sub p (size 8) (size 4) in 
-    let carryX = sub4_il x prime256_buffer tempBuffer in 
+      let h0 = ST.get() in 
+      assert(felem_seq_as_nat (as_seq h0 prime256_buffer) == prime256);
+    let carryX = sub4_il x prime256_buffer tempBuffer in
     let carryY = sub4_il y prime256_buffer tempBuffer in 
     let carryZ = sub4_il z prime256_buffer tempBuffer in 
+      
+      let h1 = ST.get() in 
+      assert(modifies1 tempBuffer h0 h1);
+      assert(if uint_v carryX = 1 then as_nat h0 x < prime256 else True); 
+      assert(if uint_v carryY = 1 then as_nat h0 y < prime256 else True); 
+      assert(if uint_v carryZ = 1 then as_nat h0 z < prime256 else True);
 
-    let lessX = eq #U64  carryX (u64 0) in 
-    let lessY = eq #U64 carryY (u64 0) in 
-    let lessZ = eq #U64  carryZ (u64 0) in 
+    let lessX = eq_u64 carryX (u64 1) in   
+    let lessY = eq_u64 carryY (u64 1) in 
+    let lessZ = eq_u64 carryZ (u64 1) in 
 
-      pop_frame()  ; 
-    lessX && lessY && lessZ
+    let r = lessX && lessY && lessZ in 
+      assert(r = true ==> as_nat h0 x < prime256 /\ as_nat h0 y < prime256 /\ as_nat h0 z < prime256);
+    pop_frame();
+    r  
+
 
 inline_for_extraction noextract
 val equalZeroBuffer: f: felem -> Stack bool
   (requires fun h -> live h f)
-  (ensures fun h0 _ h1 -> h0 == h1)
+  (ensures fun h0 r h1 -> modifies0 h0 h1 /\ (if r = true then  as_nat h0 f == 0 else as_nat h0 f > 0))
 
 let equalZeroBuffer f =        
-    let f0 = index f (size 0) in 
+    let f0 = index f (size 0) in  
     let f1 = index f (size 1) in 
     let f2 = index f (size 2) in 
     let f3 = index f (size 3) in 
@@ -59,18 +82,33 @@ let equalZeroBuffer f =
   
     z0_zero && z1_zero && z2_zero && z3_zero
   
-  
-val isMoreThanZeroLessThanOrderMinusOne: f: felem -> order: felem ->  Stack bool
-  (requires fun h -> live h f)
-  (ensures fun h0 _ h1 -> h0 == h1)
 
-let isMoreThanZeroLessThanOrderMinusOne f order = 
+(* checks whether the intefer f is between 1 and (n- 1) (incl).  *)
+(* [1, n - 1] <==> a > 0 /\ a < n) *)
+
+val isMoreThanZeroLessThanOrderMinusOne: f: felem -> Stack bool
+  (requires fun h -> live h f)
+  (ensures fun h0 r h1 -> modifies0 h0 h1 /\ r == true ==> as_nat h0 f > 0 && as_nat h0 f < prime_p256_order)
+
+let isMoreThanZeroLessThanOrderMinusOne f = 
   push_frame();
+    let h0 = ST.get() in 
     let tempBuffer = create (size 4) (u64 0) in 
-    let carry = sub4 f order tempBuffer in 
-    let less = eq #U64 carry (u64 0) in 
+        recall_contents prime256order_buffer (Lib.Sequence.of_list p256_order_prime_list);
+	let h0 = ST.get() in 
+    let carry = sub4_il f prime256order_buffer tempBuffer in  
+      assert(if uint_v carry = 1 then as_nat h0 f < prime_p256_order else True);
+	let h1 = ST.get() in 
+	assert(modifies1 tempBuffer h0 h1);
+    let less = eq_u64 carry (u64 1) in
+      assert(less == true ==> as_nat h0 f < prime_p256_order);
+	let h2 = ST.get() in 
     let more = equalZeroBuffer f in 
-    less && more
+      assert(not more == true ==> as_nat h0 f > 0);
+    let result = less &&  not more in 
+      assert(less && not more ==> as_nat h0 f > 0 && as_nat h0 f < prime_p256_order);
+  pop_frame();  
+    result
 
 
 val isOrderCorrect: p: lbuffer uint64 (size 12) -> order: felem -> tempBuffer: lbuffer uint64 (size 100) ->  Stack bool
@@ -162,9 +200,9 @@ let ecdsa_verification pubKey r s mLen m =
   let orderCorrect = isOrderCorrect pubKey order tempBuffer in 
     if orderCorrect = false then false else 
     (* Verify that {\displaystyle r} r and {\displaystyle s} s are integers in {\displaystyle [1,n-1]} [1,n-1]. If not, the signature is invalid. *)
-  let isRCorrect = isMoreThanZeroLessThanOrderMinusOne r order in 
+  let isRCorrect = isMoreThanZeroLessThanOrderMinusOne r in 
     if isRCorrect = false then false else
-  let isSCorrect = isMoreThanZeroLessThanOrderMinusOne s order in 
+  let isSCorrect = isMoreThanZeroLessThanOrderMinusOne s in 
     if isSCorrect = false then false else 
       begin
 	hash mHash mLen m;
@@ -186,7 +224,7 @@ let ecdsa_verification pubKey r s mLen m =
 
 	let x = sub pointSum (size 0) (size 4) in 
 
-	reduction_prime_2prime_order x xBuffer;
+	Hacl.Impl.MontgomeryMultiplication.reduction_prime_2prime_order x xBuffer;
 	let r = compare_felem xBuffer r in 
 	eq_0_u64 r
 	end

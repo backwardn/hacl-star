@@ -144,7 +144,8 @@ val sub4_il: x: felem -> y: ilbuffer uint64 (size 4) -> result: felem ->
   let result = as_seq h1 result in 
   let x = as_seq h0 x in 
   let y = as_seq h0 y in 
-  felem_seq_as_nat result - v c * pow2 256 == felem_seq_as_nat x - felem_seq_as_nat y
+  felem_seq_as_nat result - v c * pow2 256 == felem_seq_as_nat x - felem_seq_as_nat y /\
+  (if uint_v c = 0 then felem_seq_as_nat x >= felem_seq_as_nat y else felem_seq_as_nat x < felem_seq_as_nat y)
       )
    )
 
