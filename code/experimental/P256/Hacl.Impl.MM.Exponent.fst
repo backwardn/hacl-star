@@ -25,17 +25,6 @@ open Lib.Loops
 
 #reset-options "--z3refresh --z3rlimit 200"
 
-
-(*
-assume val lemmaFromDomainToDomain:  a: nat -> Lemma (toDomain_ (fromDomain_ a)  == a)
-
-assume val inDomain_mod_is_not_mod: a: nat ->  Lemma (toDomain_ a == toDomain_ (a % prime))
-
-assume val lemmaFromDomainToDomainModuloPrime: a: nat -> Lemma (a % prime == fromDomain_(toDomain_ a))
-*)
-
-
-
 [@ CInline]
 val cswap: bit:uint64{v bit <= 1} -> p:felem -> q:felem
   -> Stack unit
@@ -147,28 +136,6 @@ let montgomery_ladder_exponent_step a b scalar i =
     let h2 = ST.get() in 
   cswap bit a b;
     let h3 = ST.get() in 
-
-  (*assert(if uint_v bit = 0 
-    then 
-      as_nat h1 a == as_nat h0 a /\ as_nat h1 b == as_nat h0 b 
-    else
-      as_nat h1 a == as_nat h0 b /\ as_nat h1 b == as_nat h0 a);
-
-  assert(
-    if uint_v bit = 0 then 
-    let (r0D, r1D) = _exp_step0 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
-      r0D == fromDomain_ (as_nat h2 a) /\ r1D == fromDomain_ (as_nat h2 b) 
-    else
-      let (r0D, r1D) = _exp_step0 (fromDomain_ (as_nat h0 b)) (fromDomain_ (as_nat h0 a)) in 
-      r0D == fromDomain_ (as_nat h2 a) /\ r1D == fromDomain_ (as_nat h2 b));
-
-  assert(if uint_v bit = 0 
-    then  
-      let (r0D, r1D) = _exp_step0 (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b)) in 
-      fromDomain_ (as_nat h3 a) == r0D /\ fromDomain_ (as_nat h3 b) == r1D
-    else
-      let (r0D, r1D) = _exp_step0 (fromDomain_ (as_nat h0 b)) (fromDomain_ (as_nat h0 a)) in 
-      fromDomain_ (as_nat h3 a) == r1D /\ fromDomain_ (as_nat h3 b) == r0D); *)
        
    Hacl.Spec.ECDSA.lemma_swaped_steps (fromDomain_ (as_nat h0 a)) (fromDomain_ (as_nat h0 b));
    assert(
@@ -259,7 +226,7 @@ let upload_one b =
   upd b (size 2) (u64 0);
   upd b (size 3) (u64 0)
 
-let upload_scalar b = 
+let upload_order_for_inverse b = 
   upd b (size 0) (u8 79);
   upd b (size 1) (u8 37);
   upd b (size 2) (u8 99);
@@ -295,13 +262,50 @@ let upload_scalar b =
   admit()
 
 
+let upload_order b = 
+  upd b (size 0) (u8 81);
+  upd b (size 1) (u8 37);
+  upd b (size 2) (u8 99);
+  upd b (size 3) (u8 252);
+  upd b (size 4) (u8 194);
+  upd b (size 5) (u8 202);
+  upd b (size 6) (u8 185);
+  upd b (size 7) (u8 243);
+  upd b (size 8) (u8 132);
+  upd b (size 9) (u8 158);
+  upd b (size 10) (u8 23);
+  upd b (size 11) (u8 167);
+  upd b (size 12) (u8 173);
+  upd b (size 13) (u8 250);
+  upd b (size 14) (u8 230);
+  upd b (size 15) (u8 188);
+  upd b (size 16) (u8 255);
+  upd b (size 17) (u8 255);
+  upd b (size 18) (u8 255);
+  upd b (size 19) (u8 255);
+  upd b (size 20) (u8 255);
+  upd b (size 21) (u8 255);
+  upd b (size 22) (u8 255);
+  upd b (size 23) (u8 255);
+  upd b (size 24) (u8 0);
+  upd b (size 25) (u8 0);
+  upd b (size 26) (u8 0);
+  upd b (size 27) (u8 0);
+  upd b (size 28) (u8 255);
+  upd b (size 29) (u8 255);
+  upd b (size 30) (u8 255);
+  upd b (size 31) (u8 255);
+  admit()
+
+
+
 let montgomery_ladder_exponent r = 
   push_frame(); 
     let p = create (size 4) (u64 0) in 
     let scalar = create (size 32) (u8 0) in 
       let h0 = ST.get() in 
     upload_one_montg_form p; 
-    upload_scalar scalar;
+    upload_order_for_inverse scalar;
       let h1 = ST.get() in 
     _montgomery_ladder_exponent p r scalar;
       let h2 = ST.get() in 

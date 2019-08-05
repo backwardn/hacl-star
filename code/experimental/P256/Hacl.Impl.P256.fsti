@@ -148,7 +148,6 @@ val scalarMultiplication: p: point -> result: point ->
     (requires fun h -> 
       live h p /\ live h result /\ live h scalar /\ live h tempBuffer /\
     LowStar.Monotonic.Buffer.all_disjoint [loc p; loc tempBuffer; loc scalar; loc result] /\
-    eq_or_disjoint p result /\
     as_nat h (gsub p (size 0) (size 4)) < prime /\ 
     as_nat h (gsub p (size 4) (size 4)) < prime /\
     as_nat h (gsub p (size 8) (size 4)) < prime
@@ -176,7 +175,7 @@ val secretToPublic: result: point -> scalar: lbuffer uint8 (size 32) ->
 
 val isPointAtInfinity: p: point -> Stack bool
   (requires fun h -> live h p)
-  (ensures fun h0 _ h1 -> h0 == h1) 
+  (ensures fun h0 _ h1 -> modifies0 h0 h1) 
 
 val isPointOnCurve: p: point -> Stack bool
   (requires fun h -> live h p /\    

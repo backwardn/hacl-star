@@ -111,16 +111,31 @@ let isMoreThanZeroLessThanOrderMinusOne f =
     result
 
 
-val isOrderCorrect: p: lbuffer uint64 (size 12) -> order: felem -> tempBuffer: lbuffer uint64 (size 100) ->  Stack bool
-  (requires fun h -> live h p)
-  (ensures fun h0 _ h1 -> h0 == h1)
 
-let isOrderCorrect p order tempBuffer= 
+#reset-options "--z3refresh --z3rlimit 00"
+
+val isOrderCorrect: p: point -> tempBuffer: lbuffer uint64 (size 100) ->  Stack bool
+  (requires fun h -> live h p /\ live h tempBuffer /\ 
+    as_nat h (gsub p (size 0) (size 4)) < prime256 /\ 
+    as_nat h (gsub p (size 4) (size 4)) < prime256 /\
+    as_nat h (gsub p (size 8) (size 4)) < prime256 /\
+    disjoint p tempBuffer)
+  (ensures fun h0 _ h1 -> modifies1 tempBuffer h0 h1)
+
+let isOrderCorrect p tempBuffer = 
   push_frame(); 
-    let multResult = create (size 4) (u64 0) in 
-    upload_scalar order;
-    scalarMultiplication p multResult order tempBuffer;
+    let multResult : point = create (size 12) (u64 0) in 
+    let pBuffer = create (size 12) (u64 0) in 
+    let order = create (size 32) (u8 0) in 
+      let h0 = ST.get() in 
+    copy pBuffer p;
+    upload_order order;
+      let h2 = ST.get() in 
+      assert(modifies2 pBuffer order h0 h2);
+    scalarMultiplication pBuffer multResult order tempBuffer;
     let result = isPointAtInfinity multResult in 
+      let h4 = ST.get() in 
+      assert(modifies3 pBuffer multResult tempBuffer h2 h4);
  pop_frame();
    result
 
@@ -172,7 +187,6 @@ let ecdsa_verification pubKey r s mLen m =
     let mHash = create (size 32) (u8 0) in 
     let hashAsFelem = create (size 4) (u64 0) in 
     let tempBuffer = create (size 100) (u64 0) in 
-    let order = create (size 32) (u8 0) in 
     let inverseS = create (size 4) (u64 0) in 
     let u1 = create (size 4) (u64 0) in 
     let u2 = create (size 4) (u64 0) in 
@@ -187,7 +201,6 @@ let ecdsa_verification pubKey r s mLen m =
     
     copy s inverseS;
     
-    upload_scalar order;
     (*check that publicKey is not equal to the identity element O *)
   (*let pointInfinityPublicKey = isPointAtInfinity pubKey in 
     if pointInfinityPublicKey = true then false else *)
@@ -197,7 +210,7 @@ let ecdsa_verification pubKey r s mLen m =
   let belongsToCurve =  isPointOnCurve pubKey in 
     if belongsToCurve = false then false else 
     (* Check that {\displaystyle n\times Q_{A}=O} n\times Q_{A}=O *)
-  let orderCorrect = isOrderCorrect pubKey order tempBuffer in 
+  let orderCorrect = isOrderCorrect pubKey tempBuffer in 
     if orderCorrect = false then false else 
     (* Verify that {\displaystyle r} r and {\displaystyle s} s are integers in {\displaystyle [1,n-1]} [1,n-1]. If not, the signature is invalid. *)
   let isRCorrect = isMoreThanZeroLessThanOrderMinusOne r in 
