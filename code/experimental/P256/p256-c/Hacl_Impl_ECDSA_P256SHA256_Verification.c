@@ -246,11 +246,6 @@ Hacl_Impl_MontgomeryMultiplication_mul(uint64_t *f1, uint64_t *r, uint64_t *out)
   out[7U] = o7;
 }
 
-static uint64_t Hacl_Impl_MontgomeryMultiplication_mod64(uint64_t *a)
-{
-  return a[0U];
-}
-
 static void
 Hacl_Impl_MontgomeryMultiplication_shortened_mul(uint64_t *a, uint64_t b, uint64_t *result)
 {
@@ -430,7 +425,7 @@ Hacl_Impl_MontgomeryMultiplication_montgomery_multiplication_round(
   uint64_t yBuffer[8U] = { 0U };
   uint64_t t2[8U] = { 0U };
   uint64_t t3[8U] = { 0U };
-  uint64_t t1 = Hacl_Impl_MontgomeryMultiplication_mod64(t);
+  uint64_t t1 = t[0U];
   uint128_t res = (uint128_t)t1 * k0;
   K___uint64_t_uint64_t
   scrut = { .fst = (uint64_t)res, .snd = (uint64_t)(res >> (uint32_t)64U) };
@@ -633,47 +628,45 @@ bool Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne
   return result;
 }
 
-bool
-Hacl_Impl_ECDSA_P256SHA256_Verification_isOrderCorrect(
-  uint64_t *p,
-  uint64_t *order,
-  uint64_t *tempBuffer
-)
+bool Hacl_Impl_ECDSA_P256SHA256_Verification_isOrderCorrect(uint64_t *p, uint64_t *tempBuffer)
 {
-  uint64_t multResult[4U] = { 0U };
-  ((uint8_t *)order)[0U] = (uint8_t)79U;
-  ((uint8_t *)order)[1U] = (uint8_t)37U;
-  ((uint8_t *)order)[2U] = (uint8_t)99U;
-  ((uint8_t *)order)[3U] = (uint8_t)252U;
-  ((uint8_t *)order)[4U] = (uint8_t)194U;
-  ((uint8_t *)order)[5U] = (uint8_t)202U;
-  ((uint8_t *)order)[6U] = (uint8_t)185U;
-  ((uint8_t *)order)[7U] = (uint8_t)243U;
-  ((uint8_t *)order)[8U] = (uint8_t)132U;
-  ((uint8_t *)order)[9U] = (uint8_t)158U;
-  ((uint8_t *)order)[10U] = (uint8_t)23U;
-  ((uint8_t *)order)[11U] = (uint8_t)167U;
-  ((uint8_t *)order)[12U] = (uint8_t)173U;
-  ((uint8_t *)order)[13U] = (uint8_t)250U;
-  ((uint8_t *)order)[14U] = (uint8_t)230U;
-  ((uint8_t *)order)[15U] = (uint8_t)188U;
-  ((uint8_t *)order)[16U] = (uint8_t)255U;
-  ((uint8_t *)order)[17U] = (uint8_t)255U;
-  ((uint8_t *)order)[18U] = (uint8_t)255U;
-  ((uint8_t *)order)[19U] = (uint8_t)255U;
-  ((uint8_t *)order)[20U] = (uint8_t)255U;
-  ((uint8_t *)order)[21U] = (uint8_t)255U;
-  ((uint8_t *)order)[22U] = (uint8_t)255U;
-  ((uint8_t *)order)[23U] = (uint8_t)255U;
-  ((uint8_t *)order)[24U] = (uint8_t)0U;
-  ((uint8_t *)order)[25U] = (uint8_t)0U;
-  ((uint8_t *)order)[26U] = (uint8_t)0U;
-  ((uint8_t *)order)[27U] = (uint8_t)0U;
-  ((uint8_t *)order)[28U] = (uint8_t)255U;
-  ((uint8_t *)order)[29U] = (uint8_t)255U;
-  ((uint8_t *)order)[30U] = (uint8_t)255U;
-  ((uint8_t *)order)[31U] = (uint8_t)255U;
-  scalarMultiplication(p, multResult, (uint8_t *)order, tempBuffer);
+  uint64_t multResult[12U] = { 0U };
+  uint64_t pBuffer[12U] = { 0U };
+  memcpy(pBuffer, p, (uint32_t)12U * sizeof p[0U]);
+  uint8_t order[32U] = { 0U };
+  order[0U] = (uint8_t)81U;
+  order[1U] = (uint8_t)37U;
+  order[2U] = (uint8_t)99U;
+  order[3U] = (uint8_t)252U;
+  order[4U] = (uint8_t)194U;
+  order[5U] = (uint8_t)202U;
+  order[6U] = (uint8_t)185U;
+  order[7U] = (uint8_t)243U;
+  order[8U] = (uint8_t)132U;
+  order[9U] = (uint8_t)158U;
+  order[10U] = (uint8_t)23U;
+  order[11U] = (uint8_t)167U;
+  order[12U] = (uint8_t)173U;
+  order[13U] = (uint8_t)250U;
+  order[14U] = (uint8_t)230U;
+  order[15U] = (uint8_t)188U;
+  order[16U] = (uint8_t)255U;
+  order[17U] = (uint8_t)255U;
+  order[18U] = (uint8_t)255U;
+  order[19U] = (uint8_t)255U;
+  order[20U] = (uint8_t)255U;
+  order[21U] = (uint8_t)255U;
+  order[22U] = (uint8_t)255U;
+  order[23U] = (uint8_t)255U;
+  order[24U] = (uint8_t)0U;
+  order[25U] = (uint8_t)0U;
+  order[26U] = (uint8_t)0U;
+  order[27U] = (uint8_t)0U;
+  order[28U] = (uint8_t)255U;
+  order[29U] = (uint8_t)255U;
+  order[30U] = (uint8_t)255U;
+  order[31U] = (uint8_t)255U;
+  scalarMultiplication(pBuffer, multResult, order, tempBuffer);
   bool result = isPointAtInfinity(multResult);
   return result;
 }
@@ -744,7 +737,6 @@ Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
   uint8_t mHash[32U] = { 0U };
   uint64_t hashAsFelem[4U] = { 0U };
   uint64_t tempBuffer[100U] = { 0U };
-  uint8_t order[32U] = { 0U };
   uint64_t inverseS[4U] = { 0U };
   uint64_t u11[4U] = { 0U };
   uint64_t u2[4U] = { 0U };
@@ -755,38 +747,6 @@ Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
   uint64_t pointSum[12U] = { 0U };
   uint64_t xBuffer[4U] = { 0U };
   memcpy(s1, inverseS, (uint32_t)4U * sizeof inverseS[0U]);
-  order[0U] = (uint8_t)79U;
-  order[1U] = (uint8_t)37U;
-  order[2U] = (uint8_t)99U;
-  order[3U] = (uint8_t)252U;
-  order[4U] = (uint8_t)194U;
-  order[5U] = (uint8_t)202U;
-  order[6U] = (uint8_t)185U;
-  order[7U] = (uint8_t)243U;
-  order[8U] = (uint8_t)132U;
-  order[9U] = (uint8_t)158U;
-  order[10U] = (uint8_t)23U;
-  order[11U] = (uint8_t)167U;
-  order[12U] = (uint8_t)173U;
-  order[13U] = (uint8_t)250U;
-  order[14U] = (uint8_t)230U;
-  order[15U] = (uint8_t)188U;
-  order[16U] = (uint8_t)255U;
-  order[17U] = (uint8_t)255U;
-  order[18U] = (uint8_t)255U;
-  order[19U] = (uint8_t)255U;
-  order[20U] = (uint8_t)255U;
-  order[21U] = (uint8_t)255U;
-  order[22U] = (uint8_t)255U;
-  order[23U] = (uint8_t)255U;
-  order[24U] = (uint8_t)0U;
-  order[25U] = (uint8_t)0U;
-  order[26U] = (uint8_t)0U;
-  order[27U] = (uint8_t)0U;
-  order[28U] = (uint8_t)255U;
-  order[29U] = (uint8_t)255U;
-  order[30U] = (uint8_t)255U;
-  order[31U] = (uint8_t)255U;
   bool coordinatesValid = Hacl_Impl_ECDSA_P256SHA256_Verification_isCoordinateValid(pubKey);
   if (coordinatesValid == true)
     return false;
@@ -798,10 +758,7 @@ Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
     else
     {
       bool
-      orderCorrect =
-        Hacl_Impl_ECDSA_P256SHA256_Verification_isOrderCorrect(pubKey,
-          (uint64_t *)order,
-          tempBuffer);
+      orderCorrect = Hacl_Impl_ECDSA_P256SHA256_Verification_isOrderCorrect(pubKey, tempBuffer);
       if (orderCorrect == false)
         return false;
       else

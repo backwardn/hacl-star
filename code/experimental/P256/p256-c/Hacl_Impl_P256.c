@@ -2492,9 +2492,10 @@ void secretToPublic(uint64_t *result, uint8_t *scalar, uint64_t *tempBuffer)
   uint64_t basePoint[12U] = { 0U };
   uploadBasePoint(basePoint);
   uint64_t *q = tempBuffer;
+  uint64_t *buff = tempBuffer + (uint32_t)12U;
   zero_buffer(q);
-  montgomery_ladder(q, basePoint, scalar, tempBuffer);
-  norm(q, result, tempBuffer);
+  montgomery_ladder(q, basePoint, scalar, buff);
+  norm(q, result, buff);
 }
 
 bool isPointAtInfinity(uint64_t *p)

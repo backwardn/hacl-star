@@ -98,7 +98,7 @@ let mul f1 r out =
     assert(wide_as_nat4  (o0, o1, o2, o3, o4, o5, o6, o7) == as_nat4 (f10, f11, f12, f13) * as_nat4 (r0, r1, r2, r3));
   load_buffer8 o0 o1 o2 o3 o4 o5 o6 o7 out
 
-
+inline_for_extraction noextract
 val mod64: a: widefelem -> Stack uint64 
   (requires fun h -> live h a) 
   (ensures fun h0 r h1 ->modifies0 h0 h1 /\  wide_as_nat h1 a % pow2 64 = uint_v r)

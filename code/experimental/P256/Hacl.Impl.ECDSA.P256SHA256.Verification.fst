@@ -202,7 +202,8 @@ open Lib.ByteBuffer
 
 val toUint64: i: lbuffer uint8 (32ul) -> o: felem ->  Stack unit
   (requires fun h -> live h i /\ live h o /\ disjoint i o)
-  (ensures fun h0 _ h1 -> modifies1 o h0 h1)
+  (ensures fun h0 _ h1 -> modifies1 o h0 h1 /\
+     as_seq h1 o == Lib.ByteSequence.uints_from_bytes_le #_ #_ #4 (as_seq h0 i))
 
 let toUint64 i o = 
   uints_from_bytes_le o i
@@ -210,7 +211,8 @@ let toUint64 i o =
 
 val toUint8: i: felem ->  o: lbuffer uint8 (32ul) -> Stack unit
   (requires fun h -> live h i /\ live h o /\ disjoint i o)
-  (ensures fun h0 _ h1 -> modifies1 o h0 h1)
+  (ensures fun h0 _ h1 -> modifies1 o h0 h1 /\ 
+    as_seq h1 o == Lib.ByteSequence.uints_to_bytes_le #_ #_ #4 (as_seq h0 i))
 
 let toUint8 i o = 
   uints_to_bytes_le (size 4) o i
@@ -220,12 +222,12 @@ inline_for_extraction
 let hLen = 32ul
 
 assume val hash:
-    mHash:lbuffer uint8 (v hLen)
+    mHash:lbuffer uint8 (size 32) 
   -> len:size_t
-  -> m:lbuffer uint8 (v len)
+  -> m:lbuffer uint8 (size 32)
   -> Stack unit
     (requires fun h -> live h mHash /\ live h m /\ disjoint m mHash)
-    (ensures  fun h0 _ h1 -> modifies  mHash h0 h1)
+    (ensures  fun h0 _ h1 -> modifies1  mHash h0 h1)
 
 
 
@@ -265,7 +267,7 @@ let ecdsa_verification pubKey r s mLen m =
   let coordinatesValid = isCoordinateValid pubKey in
     if coordinatesValid = true then false else 
     (*Check that {\displaystyle Q_{A}} Q_{A} lies on the curve *)
-  let belongsToCurve =  isPointOnCurve pubKey in 
+  let belongsToCurve =  Hacl.Impl.P256.isPointOnCurve pubKey in 
     if belongsToCurve = false then false else 
     (* Check that {\displaystyle n\times Q_{A}=O} n\times Q_{A}=O *)
   let orderCorrect = isOrderCorrect pubKey tempBuffer in 
@@ -290,7 +292,7 @@ let ecdsa_verification pubKey r s mLen m =
 	scalarMultiplication pubKey pointu2Q bufferU2 tempBuffer;
 	point_add pointu1G pointu2Q pointSum tempBuffer;
 	
-	let resultIsPAI = isPointAtInfinity pointSum in 
+	let resultIsPAI = Hacl.Impl.P256.isPointAtInfinity pointSum in 
 	if resultIsPAI then false else 
 
 	let x = sub pointSum (size 0) (size 4) in 

@@ -20,12 +20,7 @@ bool Hacl_Impl_ECDSA_P256SHA256_Verification_isCoordinateValid(uint64_t *p);
 
 bool Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne(uint64_t *f);
 
-bool
-Hacl_Impl_ECDSA_P256SHA256_Verification_isOrderCorrect(
-  uint64_t *p,
-  uint64_t *order,
-  uint64_t *tempBuffer
-);
+bool Hacl_Impl_ECDSA_P256SHA256_Verification_isOrderCorrect(uint64_t *p, uint64_t *tempBuffer);
 
 void Hacl_Impl_ECDSA_P256SHA256_Verification_toUint64(uint8_t *i, uint64_t *o);
 
