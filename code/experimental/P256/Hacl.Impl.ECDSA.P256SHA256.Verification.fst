@@ -15,6 +15,10 @@ open Hacl.Impl.MontgomeryMultiplication
 open Hacl.Impl.MM.Exponent
 open Hacl.Spec.P256.Core
 open Hacl.Spec.ECDSAP256.Definition
+open Hacl.Spec.ECDSA
+open Hacl.Spec.P256
+open Hacl.Spec.P256.Ladder
+
 
 
 (* checks whether the coordinates are valid = 
@@ -110,33 +114,87 @@ let isMoreThanZeroLessThanOrderMinusOne f =
   pop_frame();  
     result
 
+inline_for_extraction noextract
+val multByOrder: p: point -> result: point ->  tempBuffer: lbuffer uint64 (size 100) -> Stack unit 
+  (requires fun h -> live h p /\ live h result /\ live h tempBuffer /\
+     as_nat h (gsub p (size 0) (size 4)) < prime256 /\ 
+    as_nat h (gsub p (size 4) (size 4)) < prime256 /\
+    as_nat h (gsub p (size 8) (size 4)) < prime256 /\
+   LowStar.Monotonic.Buffer.all_disjoint [loc p; loc tempBuffer;loc result]
+  )
+  (ensures fun h0 _ h1 -> modifies3 p result tempBuffer h0 h1 /\
+    (
+      let xN, yN, zN = scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h0 p)) in 
+      let x3, y3, z3 = point_x_as_nat h1 result, point_y_as_nat h1 result, point_z_as_nat h1 result in 
+      x3 == xN /\ y3 == yN /\ z3 == zN 
+) 
+)
 
 
-#reset-options "--z3refresh --z3rlimit 00"
+let multByOrder p result tempBuffer =
+  push_frame();
+    let order = create (size 32) (u8 0) in 
+      let h0 = ST.get() in 
+    upload_order order;
+      let h1 = ST.get() in 
+      modifies1_is_modifies4 p result tempBuffer order h0 h1;
+      assert(modifies4 p result tempBuffer order h0 h1);
+    scalarMultiplication p result order tempBuffer;
+      let h2 = ST.get() in 
+      assert(
+      let xN, yN, zN = scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h0 p)) in 
+      let x3, y3, z3 = point_x_as_nat h2 result, point_y_as_nat h2 result, point_z_as_nat h2 result in 
+      x3 == xN /\ y3 == yN /\ z3 == zN);
+      assert(modifies3 p result tempBuffer h1 h2);
+      modifies3_is_modifies4 tempBuffer p result order h1 h2;
+      assert (modifies4 order p result tempBuffer h0 h1);
+   pop_frame()
 
+inline_for_extraction noextract
+val multByOrder2: p: point -> result: point -> tempBuffer: lbuffer uint64 (size 100) -> Stack unit 
+  (requires fun h -> 
+    live h p /\ live h result /\ live h tempBuffer /\
+    as_nat h (gsub p (size 0) (size 4)) < prime256 /\ 
+    as_nat h (gsub p (size 4) (size 4)) < prime256 /\
+    as_nat h (gsub p (size 8) (size 4)) < prime256 /\
+   LowStar.Monotonic.Buffer.all_disjoint [loc p; loc tempBuffer;loc result]
+  )
+  (ensures fun h0 _ h1  -> modifies2 result tempBuffer h0 h1 /\
+    (
+      let xN, yN, zN = scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h0 p)) in 
+      let x3, y3, z3 = point_x_as_nat h1 result, point_y_as_nat h1 result, point_z_as_nat h1 result in 
+      x3 == xN /\ y3 == yN /\ z3 == zN 
+))
+
+let multByOrder2 p result tempBuffer = 
+  push_frame();
+    let pBuffer = create (size 12) (u64 0) in 
+    copy pBuffer p;
+    multByOrder pBuffer result tempBuffer;
+  pop_frame()  
+    
+
+#reset-options "--z3refresh --z3rlimit 100"
+(*checks whether the base point * order is point at infinity *)
 val isOrderCorrect: p: point -> tempBuffer: lbuffer uint64 (size 100) ->  Stack bool
   (requires fun h -> live h p /\ live h tempBuffer /\ 
     as_nat h (gsub p (size 0) (size 4)) < prime256 /\ 
     as_nat h (gsub p (size 4) (size 4)) < prime256 /\
     as_nat h (gsub p (size 8) (size 4)) < prime256 /\
     disjoint p tempBuffer)
-  (ensures fun h0 _ h1 -> modifies1 tempBuffer h0 h1)
+  (ensures fun h0 r h1 -> modifies1 tempBuffer h0 h1 /\ (
+      let (xN, yN, zN) = scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h0 p)) in 
+      r == Hacl.Spec.P256.isPointAtInfinity (xN, yN, zN)
+  ) 
+  
+  )
 
 let isOrderCorrect p tempBuffer = 
   push_frame(); 
-    let multResult : point = create (size 12) (u64 0) in 
-    let pBuffer = create (size 12) (u64 0) in 
-    let order = create (size 32) (u8 0) in 
-      let h0 = ST.get() in 
-    copy pBuffer p;
-    upload_order order;
-      let h2 = ST.get() in 
-      assert(modifies2 pBuffer order h0 h2);
-    scalarMultiplication pBuffer multResult order tempBuffer;
-    let result = isPointAtInfinity multResult in 
-      let h4 = ST.get() in 
-      assert(modifies3 pBuffer multResult tempBuffer h2 h4);
- pop_frame();
+    let multResult = create (size 12) (u64 0) in 
+    multByOrder2 p multResult tempBuffer;
+    let result = Hacl.Impl.P256.isPointAtInfinity multResult in  
+   pop_frame();
    result
 
 

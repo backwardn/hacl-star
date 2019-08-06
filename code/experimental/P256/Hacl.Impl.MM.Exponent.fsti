@@ -32,12 +32,12 @@ let prime = prime_p256_order
 inline_for_extraction noextract 
 val upload_order_for_inverse: b: lbuffer uint8 (size 32) -> Stack unit 
   (requires fun h -> live h b)
-  (ensures fun h0 _ h1 -> modifies1 b h0 h1 /\ scalar_as_nat h1 b == prime - 2 /\ as_seq h1 b == genScalar() )
+  (ensures fun h0 _ h1 -> modifies1 b h0 h1 /\ scalar_as_nat h1 b == prime - 2 /\ as_seq h1 b == genOrderOfCurveForInverse() )
 
 inline_for_extraction
 val upload_order: b: lbuffer uint8 (size 32) -> Stack unit
   (requires fun h -> live h b)
-  (ensures fun h0 _ h1 -> modifies1 b h0 h1 /\ scalar_as_nat h1 b == prime)
+  (ensures fun h0 _ h1 -> modifies1 b h0 h1 /\ scalar_as_nat h1 b == prime /\ as_seq h1 b == genOrderOfCurve())
 
 
 val montgomery_ladder_exponent: a: felem -> Stack unit 

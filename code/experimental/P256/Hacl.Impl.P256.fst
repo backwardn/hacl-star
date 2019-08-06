@@ -1269,7 +1269,7 @@ let secretToPublic result scalar tempBuffer =
 
 
 
-let isPointAtInfinity p = 
+let isPointAtInfinity p =  
   let z0 = index p (size 8) in 
   let z1 = index p (size 9) in 
   let z2 = index p (size 10) in 
