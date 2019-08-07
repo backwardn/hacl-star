@@ -248,7 +248,7 @@ let hLen = 32ul
 assume val hash:
     mHash:lbuffer uint8 (size 32) 
   -> len:size_t
-  -> m:lbuffer uint8 (size 32)
+  -> m:lbuffer uint8 len
   -> Stack unit
     (requires fun h -> live h mHash /\ live h m /\ disjoint m mHash)
     (ensures  fun h0 _ h1 -> modifies1  mHash h0 h1)
@@ -320,6 +320,18 @@ let ecdsa_verification_step1 r s =
   let isSCorrect = isMoreThanZeroLessThanOrderMinusOne s in 
   isRCorrect && isSCorrect
 
+inline_for_extraction noextract
+val ecdsa_verification_step23: mLen: size_t -> m: lbuffer uint8 mLen -> hashAsFelem : felem ->  Stack unit
+  (requires fun h -> live h m /\ live h hashAsFelem)
+  (ensures fun h0 _ h1 -> modifies1 hashAsFelem h0 h1)
+
+let ecdsa_verification_step23 mLen m hashAsFelem = 
+  push_frame(); 
+    let mHash = create (size 32) (u8 0) in  
+    hash mHash mLen m;
+    toUint64 mHash hashAsFelem;
+  pop_frame()  
+
 
 
 val ecdsa_verification: 
@@ -327,9 +339,9 @@ val ecdsa_verification:
   r: lbuffer uint64 (size 4) ->
   s: lbuffer uint64 (size 4) ->
   mLen: size_t ->
-  m: lbuffer uint8 (size 32) -> 
+  m: lbuffer uint8 mLen -> 
   Stack bool
-    (requires fun h -> live h pubKey /\ live h r /\ live h s /\ 
+    (requires fun h -> live h pubKey /\ live h r /\ live h s /\ live h m /\
       LowStar.Monotonic.Buffer.all_disjoint [loc pubKey; loc r; loc s; loc m] )  
     (ensures fun h0 _ h1 -> True)
 
@@ -337,8 +349,6 @@ val ecdsa_verification:
 let ecdsa_verification pubKey r s mLen m = 
   push_frame();
     let publicKeyBuffer = create (size 12) (u64 0) in 
-    
-    let mHash = create (size 32) (u8 0) in 
     let hashAsFelem = create (size 4) (u64 0) in 
     let tempBuffer = create (size 100) (u64 0) in 
     let inverseS = create (size 4) (u64 0) in 
@@ -364,9 +374,10 @@ let ecdsa_verification pubKey r s mLen m =
       end 
       else 
 	begin
+	  ecdsa_verification_step23 mLen m hashAsFelem;
 	  pop_frame();
-	  true  
-	 end
+	  true
+	end   
    
    
    

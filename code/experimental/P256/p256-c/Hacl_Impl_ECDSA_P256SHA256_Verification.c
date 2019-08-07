@@ -209,7 +209,6 @@ Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
 )
 {
   uint64_t publicKeyBuffer[12U] = { 0U };
-  uint8_t mHash[32U] = { 0U };
   uint64_t hashAsFelem[4U] = { 0U };
   uint64_t tempBuffer[100U] = { 0U };
   uint64_t inverseS[4U] = { 0U };
@@ -238,7 +237,12 @@ Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
     if (step1 == false)
       return false;
     else
+    {
+      uint8_t mHash[32U] = { 0U };
+      Hacl_Impl_ECDSA_P256SHA256_Verification_hash(mHash, mLen, m);
+      Hacl_Impl_ECDSA_P256SHA256_Verification_toUint64(mHash, hashAsFelem);
       return true;
+    }
   }
 }
 
