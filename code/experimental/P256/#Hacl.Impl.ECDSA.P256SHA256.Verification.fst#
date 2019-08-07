@@ -261,14 +261,12 @@ val verifyQValidCurvePoint: pubKey: lbuffer uint64 (size 8) -> pubKeyAsPoint: po
     LowStar.Monotonic.Buffer.all_disjoint [loc pubKey; loc tempBuffer; loc pubKeyAsPoint]
   )
   (ensures fun h0 r h1 -> modifies2 pubKeyAsPoint tempBuffer h0 h1 /\ 
-    ( 
-      let x = gsub pubKeyAsPoint (size 0) (size 4) in 
-      let y = gsub pubKeyAsPoint (size 4) (size 8) in 
-      let z = gsub pubKeyAsPoint (size 8) (size 4) in 
+    (
+      let x = gsub pubKeyAsPoint (s
     (* affine respresentation *)
       as_seq h0 pubKey == as_seq h1 (gsub pubKeyAsPoint (size 0) (size 8)) /\
-      as_nat h1 z == 1 /\ True
-      )
+      as_nat h1 (gsub pubKeyAsPoint (size 8) (size 4)) == 1 /\
+      
 )
 
 let verifyQValidCurvePoint pubKey pubKeyAsPoint tempBuffer = 

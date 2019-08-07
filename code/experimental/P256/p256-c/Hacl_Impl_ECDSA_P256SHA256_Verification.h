@@ -16,6 +16,8 @@
 #include "c/Lib_PrintBuffer.h"
 #include "FStar_UInt_8_16_32_64.h"
 
+void Hacl_Impl_ECDSA_P256SHA256_Verification_bufferToJac(uint64_t *p, uint64_t *result);
+
 bool Hacl_Impl_ECDSA_P256SHA256_Verification_isCoordinateValid(uint64_t *p);
 
 bool Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne(uint64_t *f);
@@ -30,6 +32,13 @@ extern uint32_t Hacl_Impl_ECDSA_P256SHA256_Verification_hLen;
 
 extern void
 Hacl_Impl_ECDSA_P256SHA256_Verification_hash(uint8_t *x0, uint32_t x1, uint8_t *x2);
+
+bool
+Hacl_Impl_ECDSA_P256SHA256_Verification_verifyQValidCurvePoint(
+  uint64_t *pubKey,
+  uint64_t *pubKeyAsPoint,
+  uint64_t *tempBuffer
+);
 
 bool
 Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(

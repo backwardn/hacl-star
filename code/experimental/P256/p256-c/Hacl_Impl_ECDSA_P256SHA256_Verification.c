@@ -583,6 +583,16 @@ static void Hacl_Impl_MM_Exponent_multPowerPartial(uint64_t *a, uint64_t *b, uin
     result);
 }
 
+void Hacl_Impl_ECDSA_P256SHA256_Verification_bufferToJac(uint64_t *p, uint64_t *result)
+{
+  uint64_t *partPoint = result;
+  memcpy(partPoint, p, (uint32_t)8U * sizeof p[0U]);
+  result[8U] = (uint64_t)1U;
+  result[9U] = (uint64_t)0U;
+  result[10U] = (uint64_t)0U;
+  result[11U] = (uint64_t)0U;
+}
+
 bool Hacl_Impl_ECDSA_P256SHA256_Verification_isCoordinateValid(uint64_t *p)
 {
   uint64_t tempBuffer[4U] = { 0U };
@@ -724,6 +734,37 @@ void Hacl_Impl_ECDSA_P256SHA256_Verification_toUint8(uint64_t *i, uint8_t *o)
 }
 
 uint32_t Hacl_Impl_ECDSA_P256SHA256_Verification_hLen = (uint32_t)32U;
+
+bool
+Hacl_Impl_ECDSA_P256SHA256_Verification_verifyQValidCurvePoint(
+  uint64_t *pubKey,
+  uint64_t *pubKeyAsPoint,
+  uint64_t *tempBuffer
+)
+{
+  Hacl_Impl_ECDSA_P256SHA256_Verification_bufferToJac(pubKey, pubKeyAsPoint);
+  bool
+  coordinatesValid = Hacl_Impl_ECDSA_P256SHA256_Verification_isCoordinateValid(pubKeyAsPoint);
+  if (coordinatesValid == false)
+    return false;
+  else
+  {
+    bool belongsToCurve = isPointOnCurve(pubKeyAsPoint);
+    if (belongsToCurve == false)
+      return false;
+    else
+    {
+      bool
+      orderCorrect =
+        Hacl_Impl_ECDSA_P256SHA256_Verification_isOrderCorrect(pubKeyAsPoint,
+          tempBuffer);
+      if (orderCorrect == false)
+        return false;
+      else
+        return true;
+    }
+  }
+}
 
 bool
 Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
