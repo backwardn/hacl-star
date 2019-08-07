@@ -333,6 +333,30 @@ let ecdsa_verification_step23 mLen m hashAsFelem =
   pop_frame()  
 
 
+val ecdsa_verification_step4: r: felem -> s: felem -> hash: felem -> bufferU1: lbuffer uint8 (size 32) -> 
+  bufferU2: lbuffer uint8 (size 32) ->
+  Stack unit 
+  (requires fun h -> live h r /\ live h s /\ live h hash /\ live h bufferU1 /\ live h bufferU2 /\
+    LowStar.Monotonic.Buffer.all_disjoint [loc r; loc s; loc hash; loc bufferU1; loc bufferU2] 
+  )
+  (ensures fun h0 _ h1 -> True)
+
+let ecdsa_verification_step4 r s hash bufferU1 bufferU2 = 
+  push_frame();
+    let inverseS = create (size 4) (u64 0) in 
+    let u1 = create (size 4) (u64 0) in 
+    let u2 = create (size 4) (u64 0) in 
+  copy inverseS s; admit();
+  montgomery_ladder_exponent inverseS;
+  multPowerPartial inverseS hash u1;
+  multPowerPartial inverseS r u2;
+  
+  toUint8 u1 bufferU1;
+  toUint8 u2 bufferU2;
+  pop_frame()
+
+
+
 
 val ecdsa_verification: 
   pubKey: lbuffer uint64 (size 8)-> 
@@ -351,9 +375,6 @@ let ecdsa_verification pubKey r s mLen m =
     let publicKeyBuffer = create (size 12) (u64 0) in 
     let hashAsFelem = create (size 4) (u64 0) in 
     let tempBuffer = create (size 100) (u64 0) in 
-    let inverseS = create (size 4) (u64 0) in 
-    let u1 = create (size 4) (u64 0) in 
-    let u2 = create (size 4) (u64 0) in 
 
     let bufferU1 = create (size 32) (u8 0) in 
     let bufferU2 = create (size 32) (u8 0) in 
@@ -375,6 +396,7 @@ let ecdsa_verification pubKey r s mLen m =
       else 
 	begin
 	  ecdsa_verification_step23 mLen m hashAsFelem;
+	  ecdsa_verification_step4 r s hashAsFelem bufferU1 bufferU2;
 	  pop_frame();
 	  true
 	end   
