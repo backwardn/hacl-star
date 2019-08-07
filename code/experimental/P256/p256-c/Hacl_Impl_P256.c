@@ -7,14 +7,7 @@
 
 #include "Hacl_Impl_P256.h"
 
-typedef struct K___uint64_t_uint64_t_s
-{
-  uint64_t fst;
-  uint64_t snd;
-}
-K___uint64_t_uint64_t;
-
-inline static K___uint64_t_uint64_t
+inline K___uint64_t_uint64_t
 Hacl_Spec_P256_Basic_addcarry(uint64_t x, uint64_t y, uint64_t cin)
 {
   uint64_t res1 = x + cin;
@@ -57,22 +50,6 @@ Hacl_Spec_P256_Basic_subborrow(uint64_t x, uint64_t y, uint64_t cin)
   }
   return ((K___uint64_t_uint64_t){ .fst = res, .snd = c });
 }
-
-typedef struct K___uint64_t_uint64_t_uint64_t_uint64_t_s
-{
-  uint64_t fst;
-  uint64_t snd;
-  uint64_t thd;
-  uint64_t f3;
-}
-K___uint64_t_uint64_t_uint64_t_uint64_t;
-
-typedef struct K___uint64_t_K___uint64_t_uint64_t_uint64_t_uint64_t_s
-{
-  uint64_t fst;
-  K___uint64_t_uint64_t_uint64_t_uint64_t snd;
-}
-K___uint64_t_K___uint64_t_uint64_t_uint64_t_uint64_t;
 
 typedef struct
 K___K___uint64_t_uint64_t_uint64_t_uint64_t_K___uint64_t_uint64_t_uint64_t_uint64_t_s
@@ -155,34 +132,6 @@ static uint64_t Hacl_Spec_P256_SolinasReduction_store_high_low_u(uint32_t high, 
   uint64_t as_uint64_low = (uint64_t)low;
   return as_uint64_low ^ as_uint64_high1;
 }
-
-typedef struct K___uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_s
-{
-  uint64_t fst;
-  uint64_t snd;
-  uint64_t thd;
-  uint64_t f3;
-  uint64_t f4;
-  uint64_t f5;
-  uint64_t f6;
-  uint64_t f7;
-}
-K___uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t;
-
-typedef struct
-K___uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_s
-{
-  uint64_t fst;
-  uint64_t snd;
-  uint64_t thd;
-  uint64_t f3;
-  uint64_t f4;
-  uint64_t f5;
-  uint64_t f6;
-  uint64_t f7;
-  uint64_t f8;
-}
-K___uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t;
 
 static void
 Hacl_Spec_P256_MontgomeryMultiplication_montgomery_multiplication_buffer(
@@ -1001,8 +950,7 @@ Hacl_Impl_LowLevel_add_carry(uint64_t cin, uint64_t x, uint64_t y, uint64_t *res
   return c1;
 }
 
-static uint64_t
-Hacl_Impl_LowLevel_sub_borrow(uint64_t cin, uint64_t x, uint64_t y, uint64_t *result1)
+uint64_t Hacl_Impl_LowLevel_sub_borrow(uint64_t cin, uint64_t x, uint64_t y, uint64_t *result1)
 {
   uint64_t res = x - y - cin;
   uint64_t c;
@@ -1041,7 +989,7 @@ uint64_t Hacl_Impl_LowLevel_sub4_il(uint64_t *x, uint64_t *y, uint64_t *result)
   return cc3;
 }
 
-static uint64_t Hacl_Impl_LowLevel_sub4(uint64_t *x, uint64_t *y, uint64_t *result)
+uint64_t Hacl_Impl_LowLevel_sub4(uint64_t *x, uint64_t *y, uint64_t *result)
 {
   uint64_t *r0 = result;
   uint64_t *r1 = result + (uint32_t)1U;
@@ -1054,7 +1002,7 @@ static uint64_t Hacl_Impl_LowLevel_sub4(uint64_t *x, uint64_t *y, uint64_t *resu
   return cc3;
 }
 
-static void Hacl_Impl_LowLevel_cmovznz4(uint64_t cin, uint64_t *x, uint64_t *y, uint64_t *r)
+void Hacl_Impl_LowLevel_cmovznz4(uint64_t cin, uint64_t *x, uint64_t *y, uint64_t *r)
 {
   uint64_t mask = ~FStar_UInt64_eq_mask(cin, (uint64_t)0U);
   uint64_t r0 = y[0U] & mask | x[0U] & ~mask;

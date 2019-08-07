@@ -323,38 +323,49 @@ let ecdsa_verification_step1 r s =
 inline_for_extraction noextract
 val ecdsa_verification_step23: mLen: size_t -> m: lbuffer uint8 mLen -> hashAsFelem : felem ->  Stack unit
   (requires fun h -> live h m /\ live h hashAsFelem)
-  (ensures fun h0 _ h1 -> modifies1 hashAsFelem h0 h1)
+  (ensures fun h0 _ h1 -> modifies1 hashAsFelem h0 h1 /\ as_nat h1 hashAsFelem < prime_p256_order)
 
 let ecdsa_verification_step23 mLen m hashAsFelem = 
   push_frame(); 
     let mHash = create (size 32) (u8 0) in  
     hash mHash mLen m;
     toUint64 mHash hashAsFelem;
-  pop_frame()  
+    reduction_prime_2prime_order hashAsFelem hashAsFelem;
+  pop_frame()
 
-
+inline_for_extraction noextract
 val ecdsa_verification_step4: r: felem -> s: felem -> hash: felem -> bufferU1: lbuffer uint8 (size 32) -> 
   bufferU2: lbuffer uint8 (size 32) ->
   Stack unit 
   (requires fun h -> live h r /\ live h s /\ live h hash /\ live h bufferU1 /\ live h bufferU2 /\
+    as_nat h s < prime_p256_order /\ as_nat h hash < prime_p256_order /\ as_nat h r < prime_p256_order /\
     LowStar.Monotonic.Buffer.all_disjoint [loc r; loc s; loc hash; loc bufferU1; loc bufferU2] 
   )
-  (ensures fun h0 _ h1 -> True)
+  (ensures fun h0 _ h1 -> modifies2 bufferU1 bufferU2 h0 h1)
 
 let ecdsa_verification_step4 r s hash bufferU1 bufferU2 = 
   push_frame();
-    let inverseS = create (size 4) (u64 0) in 
-    let u1 = create (size 4) (u64 0) in 
-    let u2 = create (size 4) (u64 0) in 
-  copy inverseS s; admit();
-  montgomery_ladder_exponent inverseS;
-  multPowerPartial inverseS hash u1;
-  multPowerPartial inverseS r u2;
-  
+    let tempBuffer = create (size 12) (u64 0) in 
+      let inverseS = sub tempBuffer (size 0) (size 4) in 
+      let u1 = sub tempBuffer (size 4) (size 4) in 
+      let u2 = sub tempBuffer (size 8) (size 4) in 
+    let h0 = ST.get() in 
+  copy inverseS s; 
+  montgomery_ladder_exponent inverseS; 
+  multPowerPartial inverseS hash u1; 
+  multPowerPartial inverseS r u2; 
+    let h2 = ST.get() in 
+    assert(modifies1 tempBuffer h0 h2);
   toUint8 u1 bufferU1;
   toUint8 u2 bufferU2;
+    let h3 = ST.get() in 
+    assert(modifies2 bufferU1 bufferU2 h2 h3);
+    modifies2_is_modifies3 tempBuffer bufferU1 bufferU2 h2 h3;
+    modifies1_is_modifies3 bufferU1 bufferU2 tempBuffer h0 h2;
+    assert(modifies3 bufferU1 bufferU2 tempBuffer h0 h2);
+    assert(modifies3 bufferU1 bufferU2 tempBuffer h2 h3);
+    assert(modifies3 bufferU1 bufferU2 tempBuffer h0 h3);
   pop_frame()
-
 
 
 
