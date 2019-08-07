@@ -11,7 +11,6 @@
 
 #include "C_Endianness.h"
 #include "Hacl_Impl_P256.h"
-#include "FStar.h"
 #include "TestLib.h"
 #include "c/Lib_PrintBuffer.h"
 #include "FStar_UInt_8_16_32_64.h"

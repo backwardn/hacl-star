@@ -14,69 +14,9 @@
 #include "c/Lib_PrintBuffer.h"
 #include "FStar_UInt_8_16_32_64.h"
 
-typedef struct K___uint64_t_uint64_t_s
-{
-  uint64_t fst;
-  uint64_t snd;
-}
-K___uint64_t_uint64_t;
-
-K___uint64_t_uint64_t Hacl_Spec_P256_Basic_addcarry(uint64_t x, uint64_t y, uint64_t cin);
-
-typedef struct K___uint64_t_uint64_t_uint64_t_uint64_t_s
-{
-  uint64_t fst;
-  uint64_t snd;
-  uint64_t thd;
-  uint64_t f3;
-}
-K___uint64_t_uint64_t_uint64_t_uint64_t;
-
-typedef struct K___uint64_t_K___uint64_t_uint64_t_uint64_t_uint64_t_s
-{
-  uint64_t fst;
-  K___uint64_t_uint64_t_uint64_t_uint64_t snd;
-}
-K___uint64_t_K___uint64_t_uint64_t_uint64_t_uint64_t;
-
-typedef struct K___uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_s
-{
-  uint64_t fst;
-  uint64_t snd;
-  uint64_t thd;
-  uint64_t f3;
-  uint64_t f4;
-  uint64_t f5;
-  uint64_t f6;
-  uint64_t f7;
-}
-K___uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t;
-
-typedef struct
-K___uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_s
-{
-  uint64_t fst;
-  uint64_t snd;
-  uint64_t thd;
-  uint64_t f3;
-  uint64_t f4;
-  uint64_t f5;
-  uint64_t f6;
-  uint64_t f7;
-  uint64_t f8;
-}
-K___uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t_uint64_t;
-
 extern uint64_t Hacl_Impl_LowLevel_prime256_buffer[4U];
 
-uint64_t
-Hacl_Impl_LowLevel_sub_borrow(uint64_t cin, uint64_t x, uint64_t y, uint64_t *result1);
-
 uint64_t Hacl_Impl_LowLevel_sub4_il(uint64_t *x, uint64_t *y, uint64_t *result);
-
-uint64_t Hacl_Impl_LowLevel_sub4(uint64_t *x, uint64_t *y, uint64_t *result);
-
-void Hacl_Impl_LowLevel_cmovznz4(uint64_t cin, uint64_t *x, uint64_t *y, uint64_t *r);
 
 void pointToDomain(uint64_t *p, uint64_t *result);
 

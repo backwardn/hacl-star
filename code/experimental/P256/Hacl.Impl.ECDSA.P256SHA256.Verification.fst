@@ -111,7 +111,11 @@ let equalZeroBuffer f =
 
 val isMoreThanZeroLessThanOrderMinusOne: f: felem -> Stack bool
   (requires fun h -> live h f)
-  (ensures fun h0 r h1 -> modifies0 h0 h1 /\ r == true ==> as_nat h0 f > 0 && as_nat h0 f < prime_p256_order)
+  (ensures fun h0 result h1 -> modifies0 h0 h1 /\
+    (
+      if result = true then as_nat h0 f > 0 /\ as_nat h0 f < prime_p256_order else True
+    )  
+  )
 
 let isMoreThanZeroLessThanOrderMinusOne f = 
   push_frame();
@@ -132,6 +136,7 @@ let isMoreThanZeroLessThanOrderMinusOne f =
       assert(less && not more ==> as_nat h0 f > 0 && as_nat h0 f < prime_p256_order);
   pop_frame();  
     result
+
 
 inline_for_extraction noextract
 val multByOrder: p: point -> result: point ->  tempBuffer: lbuffer uint64 (size 100) -> Stack unit 
@@ -296,20 +301,43 @@ let verifyQValidCurvePoint pubKey pubKeyAsPoint tempBuffer =
     if orderCorrect = false then false else true
 
 
+#reset-options "--z3refresh --z3rlimit 100"
+(* Verify that {\displaystyle r} r and {\displaystyle s} s are integers in {\displaystyle [1,n-1]} [1,n-1]. If not, the signature is invalid. *)
+inline_for_extraction noextract
+val ecdsa_verification_step1: r: lbuffer uint64 (size 4) -> s: lbuffer uint64 (size 4) -> Stack bool
+  (requires fun h -> live h r /\ live h s /\ disjoint r s )
+  (ensures fun h0 result h1 -> modifies0 h0 h1 
+   /\ 
+     (
+       if result = true  then 
+	 as_nat h0 r > 0 && as_nat h0 r < prime_p256_order /\ as_nat h0 s > 0 && as_nat h0 s < prime_p256_order 
+       else True
+     )
+  )
+
+let ecdsa_verification_step1 r s = 
+  let isRCorrect = isMoreThanZeroLessThanOrderMinusOne r in 
+  let isSCorrect = isMoreThanZeroLessThanOrderMinusOne s in 
+  isRCorrect && isSCorrect
+
+
 
 val ecdsa_verification: 
-  pubKey: point -> 
+  pubKey: lbuffer uint64 (size 8)-> 
   r: lbuffer uint64 (size 4) ->
   s: lbuffer uint64 (size 4) ->
   mLen: size_t ->
-  m: lbuffer uint8 (v mLen) -> 
+  m: lbuffer uint8 (size 32) -> 
   Stack bool
-    (requires fun h -> True)  
+    (requires fun h -> live h pubKey /\ live h r /\ live h s /\ 
+      LowStar.Monotonic.Buffer.all_disjoint [loc pubKey; loc r; loc s; loc m] )  
     (ensures fun h0 _ h1 -> True)
 
 
 let ecdsa_verification pubKey r s mLen m = 
   push_frame();
+    let publicKeyBuffer = create (size 12) (u64 0) in 
+    
     let mHash = create (size 32) (u8 0) in 
     let hashAsFelem = create (size 4) (u64 0) in 
     let tempBuffer = create (size 100) (u64 0) in 
@@ -324,21 +352,34 @@ let ecdsa_verification pubKey r s mLen m =
     let pointu2Q = create (size 12) (u64 0) in 
     let pointSum = create (size 12) (u64 0) in 
     let xBuffer = create (size 4) (u64 0) in 
+
+    let publicKeyCorrect = verifyQValidCurvePoint pubKey publicKeyBuffer tempBuffer in 
+    if publicKeyCorrect = false then 
+      begin pop_frame(); false end
+    else 
+    let step1 = ecdsa_verification_step1 r s in 
+    if step1 = false then 
+      begin
+	pop_frame(); false 
+      end 
+      else 
+	begin
+	  pop_frame();
+	  true  
+	 end
+   
+   
+   
+   
+   
+   (*
+
     
     copy s inverseS;
-    
-    (*check that publicKey is not equal to the identity element O *)
-  (*let pointInfinityPublicKey = isPointAtInfinity pubKey in 
-    if pointInfinityPublicKey = true then false else *)
-  let coordinatesValid = isCoordinateValid pubKey in
-    if coordinatesValid = true then false else 
-    (*Check that {\displaystyle Q_{A}} Q_{A} lies on the curve *)
-  let belongsToCurve =  Hacl.Impl.P256.isPointOnCurve pubKey in 
-    if belongsToCurve = false then false else 
-    (* Check that {\displaystyle n\times Q_{A}=O} n\times Q_{A}=O *)
-  let orderCorrect = isOrderCorrect pubKey tempBuffer in 
-    if orderCorrect = false then false else 
-    (* Verify that {\displaystyle r} r and {\displaystyle s} s are integers in {\displaystyle [1,n-1]} [1,n-1]. If not, the signature is invalid. *)
+
+(*
+
+
   let isRCorrect = isMoreThanZeroLessThanOrderMinusOne r in 
     if isRCorrect = false then false else
   let isSCorrect = isMoreThanZeroLessThanOrderMinusOne s in 
@@ -367,3 +408,6 @@ let ecdsa_verification pubKey r s mLen m =
 	let r = compare_felem xBuffer r in 
 	eq_0_u64 r
 	end
+	end
+*)
+*)
