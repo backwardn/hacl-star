@@ -262,12 +262,25 @@ val verifyQValidCurvePoint: pubKey: lbuffer uint64 (size 8) -> pubKeyAsPoint: po
   )
   (ensures fun h0 r h1 -> modifies2 pubKeyAsPoint tempBuffer h0 h1 /\ 
     ( 
-      let x = gsub pubKeyAsPoint (size 0) (size 4) in 
-      let y = gsub pubKeyAsPoint (size 4) (size 8) in 
-      let z = gsub pubKeyAsPoint (size 8) (size 4) in 
+      let xA = gsub pubKeyAsPoint (size 0) (size 4) in 
+      let yA = gsub pubKeyAsPoint (size 4) (size 4) in 
+      let zA = gsub pubKeyAsPoint (size 8) (size 4) in 
+
+      let x = gsub pubKey (size 0) (size 4) in 
+      let y = gsub pubKey (size 4) (size 4) in 
     (* affine respresentation *)
       as_seq h0 pubKey == as_seq h1 (gsub pubKeyAsPoint (size 0) (size 8)) /\
-      as_nat h1 z == 1 /\ True
+      as_nat h1 zA == 1 /\ 
+	r = true ==> 
+	  as_nat h0 (gsub pubKey (size 0) (size 4)) < prime256 /\ 
+	  as_nat h0 (gsub pubKey (size 4) (size 4)) < prime256 /\
+	  as_nat h1 xA < prime256 /\
+	  as_nat h1 yA < prime256 /\
+	  Hacl.Spec.P256.isPointOnCurve (as_nat h1 xA, as_nat h1 yA, as_nat h1 zA) /\
+	  Hacl.Spec.P256.isPointOnCurve (as_nat h0 x, as_nat h0 y, 1) /\
+	  Hacl.Spec.P256.isPointAtInfinity (scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h1 pubKeyAsPoint)))
+	  
+	  
       )
 )
 
