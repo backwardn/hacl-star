@@ -367,6 +367,47 @@ let ecdsa_verification_step4 r s hash bufferU1 bufferU2 =
     assert(modifies3 bufferU1 bufferU2 tempBuffer h0 h3);
   pop_frame()
 
+inline_for_extraction noextract
+val ecdsa_verification_step5: pubKeyAsPoint: point -> 
+  u1: lbuffer uint8 (size 32) ->  
+  u2: lbuffer uint8 (size 32) -> 
+  tempBuffer: lbuffer uint64 (size 100) -> 
+  x: felem ->  Stack bool
+  (requires fun h -> live h pubKeyAsPoint /\ live h u1 /\ live h u2 /\ live h tempBuffer /\ live h x /\ live h u1
+    /\ LowStar.Monotonic.Buffer.all_disjoint [loc pubKeyAsPoint; loc u1; loc u2; loc tempBuffer; loc x; loc u1] /\
+    as_nat h (gsub pubKeyAsPoint (size 0) (size 4)) < prime256 /\
+    as_nat h (gsub pubKeyAsPoint (size 4) (size 4)) < prime256 /\
+    as_nat h (gsub pubKeyAsPoint (size 8) (size 4)) < prime256 
+  )
+  (ensures fun h0 _ h1 -> True)
+
+
+let ecdsa_verification_step5 pubKeyAsPoint u1 u2 tempBuffer x = 
+  push_frame();
+    let points = create (size 36) (u64 0) in
+    let pointU1G = sub points (size 0) (size 12) in 
+    let pointU2Q = sub points (size 12) (size 12) in 
+    let pointSum = sub points (size 24) (size 12) in 
+
+    let buff = sub tempBuffer (size 12) (size 88) in 
+   
+  secretToPublic pointU1G u1 tempBuffer; 
+  scalarMultiplication pubKeyAsPoint pointU2Q u2 tempBuffer; 
+  point_add pointU1G pointU2Q pointSum buff;
+	admit();
+  let resultIsPAI = Hacl.Impl.P256.isPointAtInfinity pointSum in 
+  if resultIsPAI then 
+    begin 
+      pop_frame(); 
+      false 
+    end  
+  else 
+    begin 
+      let xCoordinateSum = sub pointSum (size 0) (size 4) in 
+      copy x xCoordinateSum;
+      pop_frame();
+      true
+    end
 
 
 val ecdsa_verification: 

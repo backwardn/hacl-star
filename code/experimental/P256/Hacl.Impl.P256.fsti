@@ -170,7 +170,10 @@ val secretToPublic: result: point -> scalar: lbuffer uint8 (size 32) ->
       LowStar.Monotonic.Buffer.all_disjoint [loc tempBuffer; loc scalar; loc result]
     )
   (
-    ensures fun h0 _ h1 -> modifies2 result tempBuffer h0 h1
+    ensures fun h0 _ h1 -> modifies2 result tempBuffer h0 h1 /\
+      as_nat h1 (gsub result (size 0) (size 4)) < prime /\ 
+      as_nat h1 (gsub result (size 4) (size 4)) < prime /\ 
+      as_nat h1 (gsub result (size 8) (size 4)) < prime  
   )  
 
 

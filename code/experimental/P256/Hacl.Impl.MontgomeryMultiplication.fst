@@ -17,17 +17,6 @@ open Hacl.Spec.P256.Core
 
 open FStar.Mul
 
-noextract
-let prime = prime_p256_order
-
-inline_for_extraction
-let prime256order_buffer: x: ilbuffer uint64 (size 4)  
-{witnessed #uint64 #(size 4) x 
-(Lib.Sequence.of_list p256_order_prime_list) /\ recallable x /\ 
-felem_seq_as_nat (Lib.Sequence.of_list (p256_order_prime_list)) == prime_p256_order} = 
-createL_global p256_order_prime_list
-
-
 #reset-options "--z3refresh --z3rlimit 200"
 inline_for_extraction noextract
 val load_buffer8: 
@@ -104,7 +93,6 @@ val mod64: a: widefelem -> Stack uint64
   (ensures fun h0 r h1 ->modifies0 h0 h1 /\  wide_as_nat h1 a % pow2 64 = uint_v r)
 
 let mod64 a = index a (size 0)
-
 
 inline_for_extraction noextract
 val shortened_mul_tuple: a: felem4 -> b: uint64 -> Tot (r: felem8 {as_nat4 a * uint_v b = wide_as_nat4 r /\ wide_as_nat4 r < pow2 320})
@@ -425,14 +413,6 @@ let montgomery_multiplication_round_twice t result k0 =
 
 
 
-inline_for_extraction noextract
-val reduction_prime_p256_order_2prime_p256_order_with_carry_impl_5: x: widefelem -> result: felem -> prime_p256_orderBuffer: felem -> 
-  Stack unit 
-    (requires fun h -> live h x /\ live h result /\  eq_or_disjoint x result /\ live h prime_p256_orderBuffer /\
-      (as_nat h prime_p256_orderBuffer == prime_p256_order) /\ wide_as_nat h x < 2 * prime_p256_order)
-    (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ as_nat h1 result = wide_as_nat h0 x % prime_p256_order)  
-
-
 let reduction_prime_p256_order_2prime_p256_order_with_carry_impl_5 x result prime_p256_orderBuffer  = 
   push_frame();
     let tempBuffer = create (size 4) (u64 0) in 
@@ -460,14 +440,6 @@ let lemma_reduction1 a r =
   assert(if a < prime256 then r = a % prime256 else True);
   assert(r = a % prime256)
 
-
-
-val reduction_prime_2prime_order: x: felem -> result: felem -> 
-  Stack unit 
-    (requires fun h -> live h x /\ live h result /\ eq_or_disjoint x result)
-    (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ 
-      as_nat h1 result == as_nat h0 x % prime_p256_order
-    )  
 
 let reduction_prime_2prime_order x result  = 
   push_frame();
@@ -539,17 +511,9 @@ let upload_k0 () =
 
 
 
-noextract
-val fromDomain_: a: nat -> Tot nat 
 
 let fromDomain_ a = (a * modp_inv2_prime (pow2 256) prime_p256_order) % prime_p256_order
-
-noextract
-val toDomain_: a: nat -> Tot nat
 let toDomain_ a = (a * pow2 256) % prime_p256_order 
-
-
-val lemmaFromDomainToDomain: a: nat { a < prime} -> Lemma (toDomain_ (fromDomain_ a) == a)
 
 let lemmaFromDomainToDomain a = 
    let fromA = (a * modp_inv2_prime (pow2 256) prime_p256_order) % prime_p256_order in 
@@ -571,18 +535,7 @@ assume val multiplicationInDomain: #k: nat -> #l: nat ->
     
 assume val inDomain_mod_is_not_mod: a: nat -> Lemma (toDomain_ a == toDomain_ (a % prime))
 
-assume val lemmaToDomainFromDomain: a: nat { a < prime} -> Lemma (fromDomain_ (toDomain_ a) == a)
-
-
-val montgomery_multiplication_ecdsa_module: a: felem -> b: felem ->result: felem-> 
-  Stack unit 
-    (requires fun h -> live h a /\ live h b /\ live h result /\
-      as_nat h a < prime_p256_order /\ as_nat h b < prime_p256_order)
-    (
-      ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ as_nat h1 result = (as_nat h0 a * as_nat h0 b * modp_inv2_prime (pow2 256) prime_p256_order) % prime_p256_order /\ 
-      as_nat h1 result = fromDomain_(as_nat h0 a * as_nat h0 b) /\
-      as_nat h1 result = toDomain_ (fromDomain_ (as_nat h0 a) * fromDomain_ (as_nat h0 b) % prime)
-    )
+let lemmaToDomainFromDomain a = admit()
 
 
 let montgomery_multiplication_ecdsa_module a b result =
