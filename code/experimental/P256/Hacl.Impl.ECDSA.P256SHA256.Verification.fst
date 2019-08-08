@@ -516,8 +516,12 @@ let ecdsa_verification pubKey r s mLen m =
 	begin
 	  ecdsa_verification_step23 mLen m hashAsFelem;
 	  ecdsa_verification_step4 r s hashAsFelem bufferU1 bufferU2;
+	  let state = ecdsa_verification_step5 publicKeyBuffer bufferU1 bufferU2 tempBuffer xBuffer in 
+	    if state = false then false else begin
+	  let r = compare_felem xBuffer r in 
 	  pop_frame();
-	  true
+	  r
+	  end
 	end   
    
    
