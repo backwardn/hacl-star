@@ -27,11 +27,7 @@ val load_buffer8:
   o: lbuffer uint64 (size 8) -> 
   Stack unit
     (requires fun h -> live h o)
-    (ensures fun h0 _ h1 -> modifies1 o h0 h1 /\ 
-      (
-	wide_as_nat h1 o == wide_as_nat4 (a0, a1, a2, a3, a4, a5, a6, a7)
-      )
-)
+    (ensures fun h0 _ h1 -> modifies (loc o) h0 h1 /\ wide_as_nat h1 o == wide_as_nat4 (a0, a1, a2, a3, a4, a5, a6, a7))
 
 
 let load_buffer8 a0 a1 a2 a3 a4 a5 a6 a7  o = 
@@ -51,26 +47,13 @@ let load_buffer8 a0 a1 a2 a3 a4 a5 a6 a7  o =
   upd o (size 4) a4;
   upd o (size 5) a5;
   upd o (size 6) a6;
-  upd o (size 7) a7;
-  let h1 = ST.get() in 
-    assert(felem_seq_as_nat_8 (as_seq h1 o) 
-      ==   uint_v a0 + 
-  uint_v a1 * pow2 64 + 
-  uint_v a2 * pow2 128 + 
-  uint_v a3 * pow2 192 + 
-  uint_v a4 * pow2 256 + 
-  uint_v a5 * pow2 (5 * 64) + 
-  uint_v a6 * pow2 (6 * 64) + 
-  uint_v a7 * pow2 (7 * 64));
-  assert(modifies1 o h0 h1)
+  upd o (size 7) a7
   
 
 val mul: f1: felem -> r: felem -> out: widefelem
   -> Stack unit
     (requires fun h -> live h out /\ live h f1 /\ live h r)
-    (ensures  fun h0 _ h1 ->
-      modifies (loc out) h0 h1 /\
-      wide_as_nat h1 out == as_nat h0 f1 * as_nat h0 r)
+    (ensures  fun h0 _ h1 -> modifies (loc out) h0 h1 /\ wide_as_nat h1 out == as_nat h0 f1 * as_nat h0 r)
       
 [@ CInline]
 let mul f1 r out =
@@ -87,12 +70,14 @@ let mul f1 r out =
     assert(wide_as_nat4  (o0, o1, o2, o3, o4, o5, o6, o7) == as_nat4 (f10, f11, f12, f13) * as_nat4 (r0, r1, r2, r3));
   load_buffer8 o0 o1 o2 o3 o4 o5 o6 o7 out
 
+
 inline_for_extraction noextract
 val mod64: a: widefelem -> Stack uint64 
   (requires fun h -> live h a) 
-  (ensures fun h0 r h1 ->modifies0 h0 h1 /\  wide_as_nat h1 a % pow2 64 = uint_v r)
+  (ensures fun h0 r h1 -> modifies0 h0 h1 /\  wide_as_nat h1 a % pow2 64 = uint_v r)
 
 let mod64 a = index a (size 0)
+
 
 inline_for_extraction noextract
 val shortened_mul_tuple: a: felem4 -> b: uint64 -> Tot (r: felem8 {as_nat4 a * uint_v b = wide_as_nat4 r /\ wide_as_nat4 r < pow2 320})
@@ -108,11 +93,10 @@ let shortened_mul_tuple (a0, a1, a2, a3) b =
   f0, f1, f2, f3, c, (u64 0), (u64 0), u64(0)  
 
 
-val shortened_mul: a: felem -> b: uint64 -> result: widefelem -> Stack unit
+val shortened_mul: a: ilbuffer uint64 (size 4) -> b: uint64 -> result: widefelem -> Stack unit
   (requires fun h -> live h a /\ live h result)
-  (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ 
-    as_nat h0 a * uint_v b = wide_as_nat h1 result /\ 
-    wide_as_nat h1 result < pow2 320)
+  (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ 
+    felem_seq_as_nat (as_seq h0 a) * uint_v b = wide_as_nat h1 result /\ wide_as_nat h1 result < pow2 320)
 
 let shortened_mul a b result = 
   let a0 = index a (size 0) in 
@@ -122,11 +106,12 @@ let shortened_mul a b result =
   let (f0, f1, f2, f3, f4, f5, f6, f7) = shortened_mul_tuple (a0, a1, a2, a3) b in 
   load_buffer8 f0 f1 f2 f3 f4 f5 f6 f7 result
 
+
 inline_for_extraction noextract
 val add8_without_carry:
   a: felem8 {wide_as_nat4 a < prime_p256_order * prime_p256_order} -> 
-  b: felem8 {wide_as_nat4 b < pow2 320}  -> Tot (r:felem8 {wide_as_nat4 r = wide_as_nat4 a + wide_as_nat4 b})
-
+  b: felem8 {wide_as_nat4 b < pow2 320}  -> 
+  Tot (r:felem8 {wide_as_nat4 r = wide_as_nat4 a + wide_as_nat4 b})
 
 let add8_without_carry (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7) = 
   let (carry, r0, r1, r2, r3, r4, r5, r6, r7)  = add8 (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5, b6, b7) in 
@@ -138,7 +123,7 @@ let add8_without_carry (a0, a1, a2, a3, a4, a5, a6, a7) (b0, b1, b2, b3, b4, b5,
 val add8_without_carry1:  t: widefelem -> t1: widefelem -> result: widefelem  -> Stack unit
   (requires fun h -> live h t /\ live h t1 /\ live h result /\ wide_as_nat h t1 < pow2 320 /\
     wide_as_nat h t <  prime_p256_order * prime_p256_order  )
-  (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\  wide_as_nat h1 result = wide_as_nat h0 t + wide_as_nat h0 t1)
+  (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\  wide_as_nat h1 result = wide_as_nat h0 t + wide_as_nat h0 t1)
 
 let add8_without_carry1 t r result  = 
   let t0 = index t (size 0) in 
@@ -165,7 +150,7 @@ let add8_without_carry1 t r result  =
 
 val shift8: t: widefelem -> t1: widefelem -> Stack unit 
   (requires fun h -> live h t /\ live h t1 /\ eq_or_disjoint t t1)
-  (ensures fun h0 _ h1 -> modifies1 t1 h0 h1 /\ wide_as_nat h0 t / pow2 64 = wide_as_nat h1 t1)
+  (ensures fun h0 _ h1 -> modifies (loc t1) h0 h1 /\ wide_as_nat h0 t / pow2 64 = wide_as_nat h1 t1)
 
 let shift8 t out = 
   let t1 = index t (size 1) in 
@@ -186,19 +171,15 @@ let shift8 t out =
   upd out (size 7) (u64 0)
 
 
-private let add_l (a: nat) (b: nat) (c: nat) (d: nat) : Lemma (requires a < c /\ b < d) (ensures (a + b < c + d)) = ()
 private let mul_lemma_1 (a: nat) (c: nat) (b: pos) : Lemma (requires (a < c)) (ensures (a * b < c * b)) = ()
 private let mul_lemma_ (a: nat) (b: nat) (c: nat) : Lemma (requires (a < c /\ b < c)) (ensures (a * b < c * c)) = ()
-
 private let add_l2 (a: int) (b: nat) (c: int) (d: nat) : Lemma (requires a <= c /\ b < d) (ensures (a + b < c + d)) = ()
-
 private let div_lemma (a: int) (b: pos) (c: nat) : Lemma (requires a < b) (ensures a / b <= c / b) = ()
 
 
 val lemma_montgomery_mult_1: prime_p256_order : pos {prime_p256_order = 115792089210356248762697446949407573529996955224135760342422259061068512044369} -> 
 t : int  -> k0:nat {k0 = modp_inv2_prime (-prime_p256_order) (pow2 64)} -> r: nat {t <= r} -> 
 Lemma (ensures (t + (((t % pow2 64) * k0) % pow2 64 * prime_p256_order)) / pow2 64 <= (pow2 64 * prime_p256_order + r) / pow2 64)
-
 
 let lemma_montgomery_mult_1 prime_p256_order t k0 r = 
   let t1 = t % pow2 64 in 
@@ -322,9 +303,7 @@ let lemma_montgomery_mod_inverse_addition a =
 
 
 val lemma_montgomery_mod_inverse_addition2: a: nat -> 
-  Lemma (
-    (a * modp_inv2_prime (pow2 128) prime_p256_order  * modp_inv2_prime (pow2 128) prime_p256_order) % prime_p256_order == (a * modp_inv2_prime (pow2 256) prime_p256_order) % prime_p256_order)
-
+  Lemma ( (a * modp_inv2_prime (pow2 128) prime_p256_order  * modp_inv2_prime (pow2 128) prime_p256_order) % prime_p256_order == (a * modp_inv2_prime (pow2 256) prime_p256_order) % prime_p256_order)
 
 let lemma_montgomery_mod_inverse_addition2 a = 
   assert_norm ((modp_inv2_prime (pow2 128) prime_p256_order * modp_inv2_prime (pow2 128) prime_p256_order) % prime_p256_order == (modp_inv2_prime (pow2 256) prime_p256_order) % prime_p256_order);
@@ -333,7 +312,6 @@ let lemma_montgomery_mod_inverse_addition2 a =
     assert_by_tactic ((a * modp_inv2_prime (pow2 128) prime_p256_order * modp_inv2_prime (pow2 128) prime_p256_order)  == (a * (modp_inv2_prime (pow2 128) prime_p256_order * modp_inv2_prime (pow2 128) prime_p256_order))) canon;
     lemma_mod_mul_distr_r a (modp_inv2_prime (pow2 128) prime_p256_order * modp_inv2_prime (pow2 128) prime_p256_order) prime_p256_order; 
     lemma_mod_mul_distr_r a (modp_inv2_prime (pow2 256) prime_p256_order) prime_p256_order
-
 
 
 val montgomery_multiplication_one_round_proof: 
@@ -345,13 +323,12 @@ val montgomery_multiplication_one_round_proof:
 let montgomery_multiplication_one_round_proof t k0 round co = 
   mult_one_round_ecdsa_prime t prime_p256_order co k0 
 
+
 val montgomery_multiplication_round: t: widefelem ->  round: widefelem -> k0: uint64 ->
   Stack unit 
     (requires fun h -> live h t /\ live h round  /\ wide_as_nat h t < prime_p256_order * prime_p256_order)
     (ensures fun h0 _ h1 -> modifies1 round h0 h1 /\ 
-      wide_as_nat h1 round = (wide_as_nat h0 t + prime_p256_order * ((uint_v k0 * (wide_as_nat h0 t % pow2 64)) % pow2 64) ) / pow2 64
-    )
-
+      wide_as_nat h1 round = (wide_as_nat h0 t + prime_p256_order * ((uint_v k0 * (wide_as_nat h0 t % pow2 64)) % pow2 64) ) / pow2 64)
 
 let montgomery_multiplication_round t round k0 = 
   let open FStar.Tactics in 
@@ -374,6 +351,7 @@ let montgomery_multiplication_round t round k0 =
     shift8 t3 round;
       let h4 = ST.get() in 
   pop_frame()
+
 
 inline_for_extraction noextract
 val montgomery_multiplication_round_twice: t: widefelem -> result: widefelem -> k0: uint64-> 

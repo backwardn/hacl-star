@@ -276,14 +276,17 @@ val verifyQValidCurvePoint: pubKey: lbuffer uint64 (size 8) -> pubKeyAsPoint: po
     (* affine respresentation *)
       as_seq h0 pubKey == as_seq h1 (gsub pubKeyAsPoint (size 0) (size 8)) /\
       as_nat h1 zA == 1 /\ 
-	r = true ==> 
-	  as_nat h0 (gsub pubKey (size 0) (size 4)) < prime256 /\ 
-	  as_nat h0 (gsub pubKey (size 4) (size 4)) < prime256 /\
+	(
+	  if r = true then 
+	  as_nat h0 (gsub pubKeyAsPoint (size 0) (size 4)) < prime256 /\ 
+	  as_nat h0 (gsub pubKeyAsPoint (size 4) (size 4)) < prime256 /\
 	  as_nat h1 xA < prime256 /\
 	  as_nat h1 yA < prime256 /\
+	  as_nat h1 zA < prime256 /\
 	  Hacl.Spec.P256.isPointOnCurve (as_nat h1 xA, as_nat h1 yA, as_nat h1 zA) /\
 	  Hacl.Spec.P256.isPointOnCurve (as_nat h0 x, as_nat h0 y, 1) /\
-	  Hacl.Spec.P256.isPointAtInfinity (scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h1 pubKeyAsPoint)))
+	  Hacl.Spec.P256.isPointAtInfinity (scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h1 pubKeyAsPoint))) else True
+	  )
 	  
 	  
       )
@@ -448,13 +451,13 @@ val ecdsa_verification_step5: pubKeyAsPoint: point ->
   u2: lbuffer uint8 (size 32) -> 
   tempBuffer: lbuffer uint64 (size 100) -> 
   x: felem ->  Stack bool
-  (requires fun h -> live h pubKeyAsPoint /\ live h u1 /\ live h u2 /\ live h tempBuffer /\ live h x /\ live h u1
-    /\ LowStar.Monotonic.Buffer.all_disjoint [loc pubKeyAsPoint; loc u1; loc u2; loc tempBuffer; loc x; loc u1] /\
+  (requires fun h -> live h pubKeyAsPoint /\ live h u1 /\ live h u2 /\ live h tempBuffer /\ live h x
+    /\ LowStar.Monotonic.Buffer.all_disjoint [loc pubKeyAsPoint; loc u1; loc u2; loc tempBuffer; loc x] /\
     as_nat h (gsub pubKeyAsPoint (size 0) (size 4)) < prime256 /\
     as_nat h (gsub pubKeyAsPoint (size 4) (size 4)) < prime256 /\
     as_nat h (gsub pubKeyAsPoint (size 8) (size 4)) < prime256 
   )
-  (ensures fun h0 _ h1 -> modifies3 x pubKeyAsPoint tempBuffer h0 h1 /\ as_nat h1 x < prime256)
+  (ensures fun h0 _ h1 -> modifies (loc x |+| loc pubKeyAsPoint |+| loc tempBuffer) h0 h1 /\ as_nat h1 x < prime256)
 
 
 let ecdsa_verification_step5 pubKeyAsPoint u1 u2 tempBuffer x = 
@@ -462,18 +465,18 @@ let ecdsa_verification_step5 pubKeyAsPoint u1 u2 tempBuffer x =
     let pointSum = create (size 12) (u64 0) in
       let h0 = ST.get() in 
     ecdsa_verification_step5_1 pubKeyAsPoint u1 u2 pointSum tempBuffer;
-      let h1 = ST.get() in 
+      (*let h1 = ST.get() in 
       assert(modifies3 pubKeyAsPoint pointSum tempBuffer h0 h1);
       modifies3_is_modifies4 x pubKeyAsPoint pointSum tempBuffer h0 h1;
-      assert(modifies4 x pubKeyAsPoint pointSum tempBuffer h0 h1);
+      assert(modifies4 x pubKeyAsPoint pointSum tempBuffer h0 h1); *)
     let resultIsPAI = Hacl.Impl.P256.isPointAtInfinity pointSum in 
     let xCoordinateSum = sub pointSum (size 0) (size 4) in 
     copy x xCoordinateSum;
-      let h2 = ST.get() in 
+      (*let h2 = ST.get() in 
       assert(modifies1 x h1 h2);
       modifies1_is_modifies4 pubKeyAsPoint pointSum tempBuffer x h1 h2;
       assert(modifies4 pubKeyAsPoint pointSum tempBuffer x h1 h2);
-      assert(modifies4 pubKeyAsPoint pointSum tempBuffer x h0 h2);
+      assert(modifies4 pubKeyAsPoint pointSum tempBuffer x h0 h2); *)
     pop_frame(); 
     not resultIsPAI
 
@@ -488,7 +491,7 @@ val ecdsa_verification:
   Stack bool
     (requires fun h -> live h pubKey /\ live h r /\ live h s /\ live h m /\
       LowStar.Monotonic.Buffer.all_disjoint [loc pubKey; loc r; loc s; loc m] )  
-    (ensures fun h0 _ h1 -> True)
+    (ensures fun h0 _ h1 -> modifies0 h0 h1)
 
 
 let ecdsa_verification pubKey r s mLen m = 
@@ -502,23 +505,24 @@ let ecdsa_verification pubKey r s mLen m =
 
     let bufferU1 =  sub tempBufferU8 (size 0) (size 32) in 
     let bufferU2 = sub tempBufferU8 (size 32) (size 32) in 
-    let xBuffer =  sub tempBufferU64 (size 116) (size 4) in admit();
+    let xBuffer =  sub tempBufferU64 (size 116) (size 4) in 
 
     let publicKeyCorrect = verifyQValidCurvePoint pubKey publicKeyBuffer tempBuffer in 
     if publicKeyCorrect = false then 
       begin pop_frame(); false end
     else 
+
     let step1 = ecdsa_verification_step1 r s in 
     if step1 = false then 
       begin
 	pop_frame(); false 
       end 
       else 
-	begin
+	begin 
 	  ecdsa_verification_step23 mLen m hashAsFelem;
 	  ecdsa_verification_step4 r s hashAsFelem bufferU1 bufferU2;
 	  let state = ecdsa_verification_step5 publicKeyBuffer bufferU1 bufferU2 tempBuffer xBuffer in 
-	    if state = false then false else begin
+	    if state = false then begin pop_frame(); false end else begin
 	  let r = compare_felem xBuffer r in 
 	  pop_frame();
 	  r
