@@ -235,7 +235,7 @@ let toUint64 i o =
 
 val toUint8: i: felem ->  o: lbuffer uint8 (32ul) -> Stack unit
   (requires fun h -> live h i /\ live h o /\ disjoint i o)
-  (ensures fun h0 _ h1 -> modifies1 o h0 h1 /\ 
+  (ensures fun h0 _ h1 -> modifies (loc o) h0 h1 /\ 
     as_seq h1 o == Lib.ByteSequence.uints_to_bytes_le #_ #_ #4 (as_seq h0 i))
 
 let toUint8 i o = 
@@ -251,7 +251,7 @@ assume val hash:
   -> m:lbuffer uint8 len
   -> Stack unit
     (requires fun h -> live h mHash /\ live h m /\ disjoint m mHash)
-    (ensures  fun h0 _ h1 -> modifies1  mHash h0 h1)
+    (ensures  fun h0 _ h1 -> modifies (loc mHash) h0 h1)
 
 
 (*
@@ -265,7 +265,7 @@ val verifyQValidCurvePoint: pubKey: lbuffer uint64 (size 8) -> pubKeyAsPoint: po
   (requires fun h -> live h pubKey /\ live h tempBuffer /\ live h pubKeyAsPoint /\
     LowStar.Monotonic.Buffer.all_disjoint [loc pubKey; loc tempBuffer; loc pubKeyAsPoint]
   )
-  (ensures fun h0 r h1 -> modifies2 pubKeyAsPoint tempBuffer h0 h1 /\ 
+  (ensures fun h0 r h1 -> modifies (loc pubKeyAsPoint |+| loc tempBuffer) h0 h1 /\ 
     ( 
       let xA = gsub pubKeyAsPoint (size 0) (size 4) in 
       let yA = gsub pubKeyAsPoint (size 4) (size 4) in 
@@ -323,7 +323,7 @@ let ecdsa_verification_step1 r s =
 inline_for_extraction noextract
 val ecdsa_verification_step23: mLen: size_t -> m: lbuffer uint8 mLen -> hashAsFelem : felem ->  Stack unit
   (requires fun h -> live h m /\ live h hashAsFelem)
-  (ensures fun h0 _ h1 -> modifies1 hashAsFelem h0 h1 /\ as_nat h1 hashAsFelem < prime_p256_order)
+  (ensures fun h0 _ h1 -> modifies (loc hashAsFelem) h0 h1 /\ as_nat h1 hashAsFelem < prime_p256_order)
 
 let ecdsa_verification_step23 mLen m hashAsFelem = 
   push_frame(); 
@@ -333,6 +333,7 @@ let ecdsa_verification_step23 mLen m hashAsFelem =
     reduction_prime_2prime_order hashAsFelem hashAsFelem;
   pop_frame()
 
+
 inline_for_extraction noextract
 val ecdsa_verification_step4: r: felem -> s: felem -> hash: felem -> bufferU1: lbuffer uint8 (size 32) -> 
   bufferU2: lbuffer uint8 (size 32) ->
@@ -341,7 +342,7 @@ val ecdsa_verification_step4: r: felem -> s: felem -> hash: felem -> bufferU1: l
     as_nat h s < prime_p256_order /\ as_nat h hash < prime_p256_order /\ as_nat h r < prime_p256_order /\
     LowStar.Monotonic.Buffer.all_disjoint [loc r; loc s; loc hash; loc bufferU1; loc bufferU2] 
   )
-  (ensures fun h0 _ h1 -> modifies2 bufferU1 bufferU2 h0 h1)
+  (ensures fun h0 _ h1 -> modifies (loc bufferU1 |+| loc  bufferU2) h0 h1)
 
 let ecdsa_verification_step4 r s hash bufferU1 bufferU2 = 
   push_frame();
@@ -354,17 +355,17 @@ let ecdsa_verification_step4 r s hash bufferU1 bufferU2 =
   montgomery_ladder_exponent inverseS; 
   multPowerPartial inverseS hash u1; 
   multPowerPartial inverseS r u2; 
-    let h2 = ST.get() in 
-    assert(modifies1 tempBuffer h0 h2);
+    (*let h2 = ST.get() in 
+    assert(modifies1 tempBuffer h0 h2); *)
   toUint8 u1 bufferU1;
   toUint8 u2 bufferU2;
-    let h3 = ST.get() in 
+    (*let h3 = ST.get() in 
     assert(modifies2 bufferU1 bufferU2 h2 h3);
     modifies2_is_modifies3 tempBuffer bufferU1 bufferU2 h2 h3;
     modifies1_is_modifies3 bufferU1 bufferU2 tempBuffer h0 h2;
     assert(modifies3 bufferU1 bufferU2 tempBuffer h0 h2);
     assert(modifies3 bufferU1 bufferU2 tempBuffer h2 h3);
-    assert(modifies3 bufferU1 bufferU2 tempBuffer h0 h3);
+    assert(modifies3 bufferU1 bufferU2 tempBuffer h0 h3); *)
   pop_frame()
 
 
@@ -378,7 +379,7 @@ val ecdsa_verification_step5_0: pubKeyAsPoint: point -> u1: lbuffer uint8 (size 
 	as_nat h (gsub pubKeyAsPoint (size 4) (size 4)) < prime256 /\
 	as_nat h (gsub pubKeyAsPoint (size 8) (size 4)) < prime256 
 )
-  (ensures fun h0 _ h1 -> modifies3 pubKeyAsPoint tempBuffer points h0 h1 /\
+  (ensures fun h0 _ h1 -> modifies (loc pubKeyAsPoint |+| loc  tempBuffer |+| loc points) h0 h1 /\
     	as_nat h1 (gsub points (size 0) (size 4)) < prime256 /\
 	as_nat h1 (gsub points (size 4) (size 4)) < prime256 /\
 	as_nat h1 (gsub points (size 8) (size 4)) < prime256  /\
@@ -394,12 +395,12 @@ let ecdsa_verification_step5_0 pubKeyAsPoint u1 u2 tempBuffer points  =
       let h0 = ST.get() in 
     secretToPublic pointU1G u1 tempBuffer; 
       let h1 = ST.get() in 
-      assert(modifies2 points tempBuffer h0 h1);
-      modifies2_is_modifies3 pubKeyAsPoint points tempBuffer h0 h1;
-    scalarMultiplication pubKeyAsPoint pointU2Q u2 tempBuffer; 
-      let h2 = ST.get() in 
+      (*assert(modifies2 points tempBuffer h0 h1);
+      modifies2_is_modifies3 pubKeyAsPoint points tempBuffer h0 h1; *)
+    scalarMultiplication pubKeyAsPoint pointU2Q u2 tempBuffer
+      (*let h2 = ST.get() in 
       assert(modifies3 pubKeyAsPoint points tempBuffer h1 h2);
-      assert(modifies3 pubKeyAsPoint points tempBuffer h0 h2)
+      assert(modifies3 pubKeyAsPoint points tempBuffer h0 h2) *)
 
 
 inline_for_extraction noextract
@@ -414,29 +415,29 @@ val ecdsa_verification_step5_1: pubKeyAsPoint: point ->
     as_nat h (gsub pubKeyAsPoint (size 0) (size 4)) < prime256 /\
     as_nat h (gsub pubKeyAsPoint (size 4) (size 4)) < prime256 /\
     as_nat h (gsub pubKeyAsPoint (size 8) (size 4)) < prime256 )
-    (ensures fun h0 _ h1 -> modifies3 pointSum tempBuffer pubKeyAsPoint h0 h1 /\
+    (ensures fun h0 _ h1 -> modifies (loc pointSum |+| loc tempBuffer |+| loc pubKeyAsPoint) h0 h1 /\
       as_nat h1 (gsub pointSum (size 0) (size 4)) < prime256)
 
 let ecdsa_verification_step5_1 pubKeyAsPoint u1 u2 pointSum tempBuffer = 
   push_frame();
     let points = create (size 24) (u64 0) in
     let buff = sub tempBuffer (size 12) (size 88) in 
-	let h0 = ST.get() in 
+	(*let h0 = ST.get() in *)
     ecdsa_verification_step5_0 pubKeyAsPoint u1 u2 tempBuffer points; 
-      let h1 = ST.get() in 
+     (* let h1 = ST.get() in 
       assert(modifies3 pubKeyAsPoint tempBuffer points h0 h1);
       modifies3_is_modifies4 pointSum pubKeyAsPoint tempBuffer points h0 h1;
       assert(modifies4 pointSum pubKeyAsPoint tempBuffer points h0 h1);
-   
+*)   
     let pointU1G = sub points (size 0) (size 12) in 
     let pointU2Q = sub points (size 12) (size 12) in
 
     point_add pointU1G pointU2Q pointSum buff; 
-      let h2 = ST.get() in 
+      (*let h2 = ST.get() in 
       assert(modifies2 pointSum tempBuffer h1 h2);
       modifies2_is_modifies4 pubKeyAsPoint points pointSum tempBuffer h1 h2;
       assert(modifies4 pubKeyAsPoint points pointSum tempBuffer h1 h2);
-      assert(modifies4 pubKeyAsPoint points pointSum tempBuffer h0 h2); 
+      assert(modifies4 pubKeyAsPoint points pointSum tempBuffer h0 h2); *)
   pop_frame()
 
 
@@ -475,7 +476,8 @@ let ecdsa_verification_step5 pubKeyAsPoint u1 u2 tempBuffer x =
       assert(modifies4 pubKeyAsPoint pointSum tempBuffer x h0 h2);
     pop_frame(); 
     not resultIsPAI
-    
+
+
 
 val ecdsa_verification: 
   pubKey: lbuffer uint64 (size 8)-> 
@@ -491,17 +493,16 @@ val ecdsa_verification:
 
 let ecdsa_verification pubKey r s mLen m = 
   push_frame();
-    let publicKeyBuffer = create (size 12) (u64 0) in 
-    let hashAsFelem = create (size 4) (u64 0) in 
-    let tempBuffer = create (size 100) (u64 0) in 
+    let tempBufferU64 = create (size 120) (u64 0) in 
+    let tempBufferU8 = create (size 64) (u8 0) in 
 
-    let bufferU1 = create (size 32) (u8 0) in 
-    let bufferU2 = create (size 32) (u8 0) in 
+    let publicKeyBuffer = sub tempBufferU64 (size 0) (size 12) in 
+    let hashAsFelem = sub tempBufferU64 (size 12) (size 4) in 
+    let tempBuffer = sub tempBufferU64 (size 16) (size 100) in 
 
-    let pointu1G = create (size 12) (u64 0) in 
-    let pointu2Q = create (size 12) (u64 0) in 
-    let pointSum = create (size 12) (u64 0) in 
-    let xBuffer = create (size 4) (u64 0) in 
+    let bufferU1 =  sub tempBufferU8 (size 0) (size 32) in 
+    let bufferU2 = sub tempBufferU8 (size 32) (size 32) in 
+    let xBuffer =  sub tempBufferU64 (size 116) (size 4) in admit();
 
     let publicKeyCorrect = verifyQValidCurvePoint pubKey publicKeyBuffer tempBuffer in 
     if publicKeyCorrect = false then 
@@ -525,45 +526,3 @@ let ecdsa_verification pubKey r s mLen m =
 	end   
    
    
-   
-   
-   
-   (*
-
-    
-    copy s inverseS;
-
-(*
-
-
-  let isRCorrect = isMoreThanZeroLessThanOrderMinusOne r in 
-    if isRCorrect = false then false else
-  let isSCorrect = isMoreThanZeroLessThanOrderMinusOne s in 
-    if isSCorrect = false then false else 
-      begin
-	hash mHash mLen m;
-	toUint64 mHash hashAsFelem;
-	
-	montgomery_ladder_exponent inverseS;
-	multPowerPartial inverseS hashAsFelem u1;
-	multPowerPartial inverseS r u2;
-  
-	toUint8 u1 bufferU1;
-	toUint8 u2 bufferU2;
-
-	secretToPublic pointu1G u1 tempBuffer;
-	scalarMultiplication pubKey pointu2Q bufferU2 tempBuffer;
-	point_add pointu1G pointu2Q pointSum tempBuffer;
-	
-	let resultIsPAI = Hacl.Impl.P256.isPointAtInfinity pointSum in 
-	if resultIsPAI then false else 
-
-	let x = sub pointSum (size 0) (size 4) in 
-
-	Hacl.Impl.MontgomeryMultiplication.reduction_prime_2prime_order x xBuffer;
-	let r = compare_felem xBuffer r in 
-	eq_0_u64 r
-	end
-	end
-*)
-*)

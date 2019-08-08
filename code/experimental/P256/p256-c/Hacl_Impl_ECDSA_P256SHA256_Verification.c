@@ -775,22 +775,21 @@ Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
   uint8_t *m
 )
 {
-  uint64_t publicKeyBuffer[12U] = { 0U };
-  uint64_t hashAsFelem[4U] = { 0U };
-  uint64_t tempBuffer[100U] = { 0U };
-  uint8_t bufferU1[32U] = { 0U };
-  uint8_t bufferU2[32U] = { 0U };
-  uint64_t pointu1G[12U] = { 0U };
-  uint64_t pointu2Q[12U] = { 0U };
-  uint64_t pointSum[12U] = { 0U };
-  uint64_t xBuffer[4U] = { 0U };
+  uint64_t tempBufferU64[120U] = { 0U };
+  uint8_t tempBufferU8[64U] = { 0U };
+  uint64_t *publicKeyBuffer = tempBufferU64;
+  uint64_t *hashAsFelem = tempBufferU64 + (uint32_t)12U;
+  uint64_t *tempBuffer = tempBufferU64 + (uint32_t)16U;
+  uint8_t *bufferU1 = tempBufferU8;
+  uint8_t *bufferU2 = tempBufferU8 + (uint32_t)32U;
+  uint64_t *xBuffer = tempBufferU64 + (uint32_t)116U;
   bool
   publicKeyCorrect =
     Hacl_Impl_ECDSA_P256SHA256_Verification_verifyQValidCurvePoint(pubKey,
       publicKeyBuffer,
       tempBuffer);
   if (publicKeyCorrect == false)
-    return false;
+    return (bool)(void *)false;
   else
   {
     bool
@@ -798,8 +797,9 @@ Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
     bool
     isSCorrect = Hacl_Impl_ECDSA_P256SHA256_Verification_isMoreThanZeroLessThanOrderMinusOne(s1);
     bool step1 = isRCorrect && isSCorrect;
+    void *ite0;
     if (step1 == false)
-      return false;
+      ite0 = (void *)false;
     else
     {
       uint8_t mHash[32U] = { 0U };
@@ -816,8 +816,31 @@ Hacl_Impl_ECDSA_P256SHA256_Verification_ecdsa_verification(
       Hacl_Impl_MM_Exponent_multPowerPartial(inverseS, r, u2);
       Hacl_Impl_ECDSA_P256SHA256_Verification_toUint8(u11, bufferU1);
       Hacl_Impl_ECDSA_P256SHA256_Verification_toUint8(u2, bufferU2);
-      return true;
+      uint64_t pointSum[12U] = { 0U };
+      uint64_t points[24U] = { 0U };
+      uint64_t *buff = tempBuffer + (uint32_t)12U;
+      uint64_t *pointU1G = points;
+      uint64_t *pointU2Q0 = points + (uint32_t)12U;
+      secretToPublic(pointU1G, bufferU1, tempBuffer);
+      scalarMultiplication(publicKeyBuffer, pointU2Q0, bufferU2, tempBuffer);
+      uint64_t *pointU1G0 = points;
+      uint64_t *pointU2Q = points + (uint32_t)12U;
+      point_add(pointU1G0, pointU2Q, pointSum, buff);
+      bool resultIsPAI = isPointAtInfinity(pointSum);
+      uint64_t *xCoordinateSum = pointSum;
+      memcpy(xBuffer, xCoordinateSum, (uint32_t)4U * sizeof xCoordinateSum[0U]);
+      bool state = !resultIsPAI;
+      void *ite;
+      if (state == false)
+        ite = (void *)false;
+      else
+      {
+        uint64_t r1 = compare_felem(xBuffer, r);
+        ite = (void *)r1;
+      }
+      ite0 = (void *)ite;
     }
+    return (bool)(void *)ite0;
   }
 }
 
