@@ -153,7 +153,8 @@ val scalarMultiplication: p: point -> result: point ->
     as_nat h (gsub p (size 4) (size 4)) < prime /\
     as_nat h (gsub p (size 8) (size 4)) < prime
     )
-  (ensures fun h0 _ h1 -> modifies3 p result tempBuffer h0 h1 /\
+  (ensures fun h0 _ h1 -> (* modifies3 p result tempBuffer h0 h1 /\ *)
+    modifies (loc p |+| loc result |+| loc tempBuffer) h0 h1 /\
     (
       let x3, y3, z3 = point_x_as_nat h1 result, point_y_as_nat h1 result, point_z_as_nat h1 result in 
       let (xN, yN, zN) = scalar_multiplication (as_seq h0 scalar) (point_prime_to_coordinates (as_seq h0 p)) in 

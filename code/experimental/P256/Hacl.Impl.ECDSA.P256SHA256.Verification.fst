@@ -10,7 +10,6 @@ open Lib.Buffer
 open Hacl.Spec.P256.Definitions
 open Hacl.Impl.LowLevel
 open Hacl.Impl.P256
-open Hacl.Spec.P256.MontgomeryMultiplication
 open Hacl.Impl.MontgomeryMultiplication
 open Hacl.Impl.MM.Exponent
 open Hacl.Spec.P256.Core
@@ -21,7 +20,7 @@ open Hacl.Spec.P256.Ladder
 
 val bufferToJac: p: lbuffer uint64 (size 8) -> result: point -> Stack unit 
   (requires fun h -> live h p /\ live h result /\ disjoint p result)
-  (ensures fun h0 _ h1 -> modifies1 result h0 h1 /\ as_nat h1 (gsub result (size 8) (size 4)) == 1 /\ 
+  (ensures fun h0 _ h1 -> modifies (loc result) h0 h1 /\ as_nat h1 (gsub result (size 8) (size 4)) == 1 /\ 
     as_seq h0 (gsub p (size 0) (size 8)) == as_seq h1 (gsub result (size 0) (size 8)))
 
 let bufferToJac p result = 
@@ -58,7 +57,7 @@ val isCoordinateValid: p: lbuffer uint64 (size 12) -> Stack bool
 
 open FStar.Mul 
 
-let isCoordinateValid p = 
+  let isCoordinateValid p = 
   push_frame();
     let tempBuffer = create (size 4) (u64 0) in 
     recall_contents prime256_buffer (Lib.Sequence.of_list p256_prime_list);
@@ -146,7 +145,7 @@ val multByOrder: p: point -> result: point ->  tempBuffer: lbuffer uint64 (size 
     as_nat h (gsub p (size 8) (size 4)) < prime256 /\
    LowStar.Monotonic.Buffer.all_disjoint [loc p; loc tempBuffer;loc result]
   )
-  (ensures fun h0 _ h1 -> modifies3 p result tempBuffer h0 h1 /\
+  (ensures fun h0 _ h1 -> modifies (loc p |+| loc result |+| loc tempBuffer) h0 h1 /\
     (
       let xN, yN, zN = scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h0 p)) in 
       let x3, y3, z3 = point_x_as_nat h1 result, point_y_as_nat h1 result, point_z_as_nat h1 result in 
@@ -160,19 +159,20 @@ let multByOrder p result tempBuffer =
     let order = create (size 32) (u8 0) in 
       let h0 = ST.get() in 
     upload_order order;
-      let h1 = ST.get() in 
-      modifies1_is_modifies4 p result tempBuffer order h0 h1;
-      assert(modifies4 p result tempBuffer order h0 h1);
+     (* let h1 = ST.get() in 
+      modifies1_is_modifies4 p result tempBuffer order h0 h1; 
+      assert(modifies (loc p |+| loc result |+| loc tempBuffer |+| loc order) h0 h1); *)
     scalarMultiplication p result order tempBuffer;
       let h2 = ST.get() in 
       assert(
       let xN, yN, zN = scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h0 p)) in 
       let x3, y3, z3 = point_x_as_nat h2 result, point_y_as_nat h2 result, point_z_as_nat h2 result in 
       x3 == xN /\ y3 == yN /\ z3 == zN);
-      assert(modifies3 p result tempBuffer h1 h2);
+      (*assert(modifies3 p result tempBuffer h1 h2); 
       modifies3_is_modifies4 tempBuffer p result order h1 h2;
-      assert (modifies4 order p result tempBuffer h0 h1);
+      assert (modifies (loc order |+| loc p |+| loc  result |+| loc tempBuffer) h0 h1);  *)
    pop_frame()
+
 
 inline_for_extraction noextract
 val multByOrder2: p: point -> result: point -> tempBuffer: lbuffer uint64 (size 100) -> Stack unit 
@@ -183,7 +183,7 @@ val multByOrder2: p: point -> result: point -> tempBuffer: lbuffer uint64 (size 
     as_nat h (gsub p (size 8) (size 4)) < prime256 /\
    LowStar.Monotonic.Buffer.all_disjoint [loc p; loc tempBuffer;loc result]
   )
-  (ensures fun h0 _ h1  -> modifies2 result tempBuffer h0 h1 /\
+  (ensures fun h0 _ h1  -> modifies (loc result |+| loc tempBuffer) h0 h1 /\
     (
       let xN, yN, zN = scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h0 p)) in 
       let x3, y3, z3 = point_x_as_nat h1 result, point_y_as_nat h1 result, point_z_as_nat h1 result in 
@@ -206,7 +206,7 @@ val isOrderCorrect: p: point -> tempBuffer: lbuffer uint64 (size 100) ->  Stack 
     as_nat h (gsub p (size 4) (size 4)) < prime256 /\
     as_nat h (gsub p (size 8) (size 4)) < prime256 /\
     disjoint p tempBuffer)
-  (ensures fun h0 r h1 -> modifies1 tempBuffer h0 h1 /\ (
+  (ensures fun h0 r h1 -> modifies(loc tempBuffer) h0 h1 /\ (
       let (xN, yN, zN) = scalar_multiplication (genOrderOfCurve()) (point_prime_to_coordinates (as_seq h0 p)) in 
       r == Hacl.Spec.P256.isPointAtInfinity (xN, yN, zN)
   ) 
@@ -226,7 +226,7 @@ open Lib.ByteBuffer
 
 val toUint64: i: lbuffer uint8 (32ul) -> o: felem ->  Stack unit
   (requires fun h -> live h i /\ live h o /\ disjoint i o)
-  (ensures fun h0 _ h1 -> modifies1 o h0 h1 /\
+  (ensures fun h0 _ h1 -> modifies (loc o) h0 h1 /\
      as_seq h1 o == Lib.ByteSequence.uints_from_bytes_le #_ #_ #4 (as_seq h0 i))
 
 let toUint64 i o = 
@@ -414,7 +414,8 @@ val ecdsa_verification_step5_1: pubKeyAsPoint: point ->
     as_nat h (gsub pubKeyAsPoint (size 0) (size 4)) < prime256 /\
     as_nat h (gsub pubKeyAsPoint (size 4) (size 4)) < prime256 /\
     as_nat h (gsub pubKeyAsPoint (size 8) (size 4)) < prime256 )
-    (ensures fun h0 _ h1 -> modifies3 pointSum tempBuffer pubKeyAsPoint h0 h1)
+    (ensures fun h0 _ h1 -> modifies3 pointSum tempBuffer pubKeyAsPoint h0 h1 /\
+      as_nat h1 (gsub pointSum (size 0) (size 4)) < prime256)
 
 let ecdsa_verification_step5_1 pubKeyAsPoint u1 u2 pointSum tempBuffer = 
   push_frame();
@@ -452,38 +453,29 @@ val ecdsa_verification_step5: pubKeyAsPoint: point ->
     as_nat h (gsub pubKeyAsPoint (size 4) (size 4)) < prime256 /\
     as_nat h (gsub pubKeyAsPoint (size 8) (size 4)) < prime256 
   )
-  (ensures fun h0 _ h1 -> modifies2 tempBuffer x h0 h1)
+  (ensures fun h0 _ h1 -> modifies3 x pubKeyAsPoint tempBuffer h0 h1 /\ as_nat h1 x < prime256)
 
 
 let ecdsa_verification_step5 pubKeyAsPoint u1 u2 tempBuffer x = 
-  let h0 = ST.get() in 
   push_frame();
-    let points = create (size 36) (u64 0) in
-    let pointU1G = sub points (size 0) (size 12) in 
-    let pointU2Q = sub points (size 12) (size 12) in 
-    let pointSum = sub points (size 24) (size 12) in 
-
-    let buff = sub tempBuffer (size 12) (size 88) in 
-   
-  secretToPublic pointU1G u1 tempBuffer; 
-  scalarMultiplication pubKeyAsPoint pointU2Q u2 tempBuffer; 
-  point_add pointU1G pointU2Q pointSum buff;
-  let resultIsPAI = Hacl.Impl.P256.isPointAtInfinity pointSum in 
-  if resultIsPAI then 
-    begin 
-      pop_frame(); 
-	let h1 = ST.get() in 
-      modifies1_is_modifies2 x tempBuffer h0 h1;
-      false 
-    end  
-  else 
-    begin 
-      let xCoordinateSum = sub pointSum (size 0) (size 4) in 
-      copy x xCoordinateSum;
-      pop_frame();
-      true
-    end
-
+    let pointSum = create (size 12) (u64 0) in
+      let h0 = ST.get() in 
+    ecdsa_verification_step5_1 pubKeyAsPoint u1 u2 pointSum tempBuffer;
+      let h1 = ST.get() in 
+      assert(modifies3 pubKeyAsPoint pointSum tempBuffer h0 h1);
+      modifies3_is_modifies4 x pubKeyAsPoint pointSum tempBuffer h0 h1;
+      assert(modifies4 x pubKeyAsPoint pointSum tempBuffer h0 h1);
+    let resultIsPAI = Hacl.Impl.P256.isPointAtInfinity pointSum in 
+    let xCoordinateSum = sub pointSum (size 0) (size 4) in 
+    copy x xCoordinateSum;
+      let h2 = ST.get() in 
+      assert(modifies1 x h1 h2);
+      modifies1_is_modifies4 pubKeyAsPoint pointSum tempBuffer x h1 h2;
+      assert(modifies4 pubKeyAsPoint pointSum tempBuffer x h1 h2);
+      assert(modifies4 pubKeyAsPoint pointSum tempBuffer x h0 h2);
+    pop_frame(); 
+    not resultIsPAI
+    
 
 val ecdsa_verification: 
   pubKey: lbuffer uint64 (size 8)-> 
